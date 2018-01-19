@@ -18,7 +18,8 @@ package com.ihsinformatics.gfatm.integration.shared;
  */
 public final class Constant {
 
-	public static final int gxpEncounterType = 23;
+	public static final String patientIdRegex = "^[A-Za-z0-9]{5}\\-[0-9]$";
+	public static final int gxpEncounterType = 172; // 23;
 	public static final int gxpResultConceptId = 162202;
 	public static final int invalidConceptId = 163611;
 	public static final int noResultConceptId = 164312;
@@ -38,4 +39,9 @@ public final class Constant {
 	public static final int errorCodeConceptId = 164348;
 	public static final int errorNotesConceptId = 166068;
 	public static final int notesConceptId = 166066;
+	public static final int sampleConceptId = 159968;
+	public static final int hostConceptId = 166069;
+	public static final int reagentLotConceptId = 166070;
+	public static final int moduleSerialConceptId = 166071;
+
 }

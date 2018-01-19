@@ -32,8 +32,6 @@ import java.util.List;
 import java.util.Properties;
 import java.util.UUID;
 
-import javax.servlet.ServletException;
-import javax.servlet.http.HttpServlet;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 
@@ -54,7 +52,7 @@ import com.ihsinformatics.util.DateTimeUtil;
  * @author owais.hussain@ihsinformatics.com
  *
  */
-public class GxAlertMain extends HttpServlet {
+public class GxAlertMain implements java.io.Serializable {
 
 	private static final long serialVersionUID = -4482413651235453707L;
 	private static final Logger log = Logger.getLogger(GxAlertMain.class);
@@ -64,40 +62,155 @@ public class GxAlertMain extends HttpServlet {
 	private String apiKey;
 	private String authentication;
 	private int gxAlertUserId;
-	private int fetchDurationDays;
+	private int fetchDurationHours;
 	private DatabaseUtil dbUtil;
 
 	public static void main(String[] args) {
 		try {
+			boolean doAuto = true;
+			boolean doImportAll = false;
+			boolean doRestrictDate = false;
+			// Check arguments first
+			// -a to import all results day-by-day
+			// -r to import results for a specific date
+			Date forDate = null;
+			for (int i = 0; i < args.length; i++) {
+				if (args[i].equals("-a")) {
+					doImportAll = true;
+					doAuto = false;
+				} else if (args[i].equals("-r")) {
+					doRestrictDate = true;
+					doAuto = false;
+					forDate = DateTimeUtil.fromSqlDateString(args[i + 1]);
+					if (forDate == null) {
+						System.out
+								.println("Invalid date provided. Please specify date in SQL format without quotes, i.e. yyyy-MM-dd");
+					}
+				}
+			}
 			InputStream inputStream = Thread.currentThread()
 					.getContextClassLoader()
 					.getResourceAsStream(PROP_FILE_NAME);
 			prop = new Properties();
 			prop.load(inputStream);
-			GxAlertMain gxAlert = new GxAlertMain();
-			gxAlert.run();
-		} catch (IOException e) {
+			// Import all results
+			if (doImportAll) {
+				importAll();
+			} else if (doRestrictDate) {
+				importForDate(new DateTime(forDate.getTime()));
+			} else if (doAuto) {
+				importAuto();
+			}
+			System.out.println("Import process complete.");
+		} catch (Exception e) {
 			e.printStackTrace();
 		}
 		System.exit(0);
 	}
 
-	public GxAlertMain() {
-		String username = GxAlertMain.prop.getProperty("connection.username");
-		String password = GxAlertMain.prop.getProperty("connection.password");
+	public GxAlertMain() throws NumberFormatException {
+		String dbUsername = GxAlertMain.prop.getProperty("connection.username");
+		String dbPassword = GxAlertMain.prop.getProperty("connection.password");
 		String url = GxAlertMain.prop.getProperty("connection.url");
 		String dbName = GxAlertMain.prop
 				.getProperty("connection.default_schema");
 		String driverName = GxAlertMain.prop
 				.getProperty("connection.driver_class");
-		dbUtil = new DatabaseUtil(url, dbName, driverName, username, password);
+		dbUtil = new DatabaseUtil(url, dbName, driverName, dbUsername,
+				dbPassword);
+		String username = prop.getProperty("gxalert.openmrs.username");
 		gxAlertUserId = Integer.parseInt(prop.getProperty(
 				"gxalert.openmrs.user_id", "427"));
 		baseUrl = prop.getProperty("gxalert.url");
 		apiKey = prop.getProperty("gxalert.api_key");
 		authentication = prop.getProperty("gxalert.authentication");
-		fetchDurationDays = Integer.parseInt(prop.getProperty(
-				"gxalert.fetch_duration_days", "30"));
+		fetchDurationHours = Integer.parseInt(prop.getProperty(
+				"gxalert.fetch_duration_hours", "24"));
+		// Get User ID against the user
+		Object userId = dbUtil.runCommand(CommandType.SELECT,
+				"select user_id from openmrs.users where username = '"
+						+ username + "'");
+		gxAlertUserId = Integer.parseInt(userId.toString());
+	}
+
+	/**
+	 * Fetches last update date from Encounter table against
+	 * {@code Constant.gxpEncounterType}. If no results are there, then first
+	 * date from Encounter table is picked.
+	 * 
+	 * @throws MalformedURLException
+	 * @throws JSONException
+	 * @throws InstantiationException
+	 * @throws IllegalAccessException
+	 * @throws ClassNotFoundException
+	 * @throws ParseException
+	 * @throws SQLException
+	 */
+	public static void importAuto() throws MalformedURLException,
+			JSONException, InstantiationException, IllegalAccessException,
+			ClassNotFoundException, ParseException, SQLException {
+		GxAlertMain gxAlert = new GxAlertMain();
+		String dateStr = gxAlert.dbUtil
+				.getValue("select ifnull(max(date_created), (select min(date_created) from encounter)) as max_date from encounter where encounter_type = "
+						+ Constant.gxpEncounterType);
+		DateTime start = new DateTime().minusHours(gxAlert.fetchDurationHours);
+		if (dateStr != null) {
+			start = new DateTime(DateTimeUtil.fromSqlDateString(dateStr));
+		}
+		DateTime end = start.plusHours(gxAlert.fetchDurationHours);
+		gxAlert.run(start, end);
+	}
+
+	/**
+	 * Fetches last update date from Encounter table against
+	 * {@code Constant.gxpEncounterType} and for every date, new results are
+	 * fetched and stored
+	 * 
+	 * @throws MalformedURLException
+	 * @throws JSONException
+	 * @throws InstantiationException
+	 * @throws IllegalAccessException
+	 * @throws ClassNotFoundException
+	 * @throws ParseException
+	 * @throws SQLException
+	 */
+	public static void importAll() throws MalformedURLException, JSONException,
+			InstantiationException, IllegalAccessException,
+			ClassNotFoundException, ParseException, SQLException {
+		GxAlertMain gxAlert = new GxAlertMain();
+		String dateStr = gxAlert.dbUtil
+				.getValue("select ifnull(max(date_created), (select min(date_created) from encounter)) as max_date from encounter where encounter_type = "
+						+ Constant.gxpEncounterType);
+		DateTime start = new DateTime(DateTimeUtil.fromSqlDateString(dateStr));
+		DateTime end = start.plusDays(1);
+		while (end.isBeforeNow()) {
+			gxAlert.run(start, end);
+			start = start.plusDays(1);
+			end = end.plusDays(1);
+		}
+	}
+
+	/**
+	 * Fetch results of a specific date and import
+	 * 
+	 * @param start
+	 * @throws MalformedURLException
+	 * @throws JSONException
+	 * @throws InstantiationException
+	 * @throws IllegalAccessException
+	 * @throws ClassNotFoundException
+	 * @throws ParseException
+	 * @throws SQLException
+	 */
+	public static void importForDate(DateTime start)
+			throws MalformedURLException, JSONException,
+			InstantiationException, IllegalAccessException,
+			ClassNotFoundException, ParseException, SQLException {
+		GxAlertMain gxAlert = new GxAlertMain();
+		start = start.withHourOfDay(0).withMinuteOfHour(0)
+				.withSecondOfMinute(0);
+		DateTime end = start.plusDays(1).minusSeconds(1);
+		gxAlert.run(start, end);
 	}
 
 	/**
@@ -121,90 +234,98 @@ public class GxAlertMain extends HttpServlet {
 		}
 		JSONArray results = getGxAlertResults(requestParams.toString());
 		if (results == null) {
-			out.write("ERROR! Could not retrieve GXAlert results.");
+			out.write("ERROR! Could not retrieve results.");
 		} else {
 			out.write(results.toString());
 		}
 		out.close();
 	}
 
-	@Override
-	protected void doGet(HttpServletRequest req, HttpServletResponse resp)
-			throws ServletException, IOException {
-		try {
-			handleRequest(req, resp);
-			super.doGet(req, resp);
-		} catch (JSONException e) {
-			e.printStackTrace();
-		}
-	}
-
-	@Override
-	protected void doPost(HttpServletRequest req, HttpServletResponse resp)
-			throws ServletException, IOException {
-		try {
-			handleRequest(req, resp);
-			super.doPost(req, resp);
-		} catch (JSONException e) {
-			e.printStackTrace();
-		}
-	}
-
 	/**
-	 * This method fetches all encounters, which are missing GXP results and
-	 * searches for respective results via GXAlert API. If a result is found, it
-	 * is saved as a set of observations
+	 * This method fetches all GXP results entered between given range of dates
+	 * 
+	 * @param start
+	 * @param end
+	 * @throws ParseException
+	 * @throws JSONException
+	 * @throws MalformedURLException
+	 * @throws SQLException
+	 * @throws ClassNotFoundException
+	 * @throws IllegalAccessException
+	 * @throws InstantiationException
 	 */
-	public void run() {
-		// TODO: Remove the minusMonths() part on production
-		DateTime from = new DateTime().minusMonths(3);
-		from = from.minusDays(fetchDurationDays);
-		DateTime to = new DateTime();
-		StringBuilder query = new StringBuilder();
-		query.append("select e.encounter_id, e.patient_id, pi.identifier, e.location_id, e.date_created from openmrs.encounter as e ");
-		query.append("inner join openmrs.patient_identifier as pi on pi.identifier_type = 3 and pi.patient_id = e.patient_id and pi.preferred = 1 and pi.voided = 0 ");
-		query.append("where e.encounter_type = " + Constant.gxpEncounterType
-				+ " ");
-		query.append("and e.date_created between date('"
-				+ DateTimeUtil.toSqlDateTimeString(from.toDate())
-				+ "') and date('"
-				+ DateTimeUtil.toSqlDateTimeString(to.toDate()) + "') ");
-		query.append("and not exists (select * from openmrs.obs where encounter_id = e.encounter_id and concept_id = "
-				+ Constant.gxpResultConceptId + ")");
-		// Search for all GX Test forms with missing results
-		Object[][] list = dbUtil.getTableData(query.toString());
-		// Get GXAlert user ID
-		for (Object[] record : list) {
-			try {
-				Integer.parseInt(record[0].toString());
-				int patientId = Integer.parseInt(record[1].toString());
-				String identifier = record[2].toString();
-				int encounterLocationId = Integer
-						.parseInt(record[3].toString());
-				Date date = DateTimeUtil.fromSqlDateTimeString(record[4]
-						.toString());
-				DateTime dateEncounterCreated = new DateTime(date.getTime());
-				// Make GXAlert call and search for results for given unique
-				// identifier
-				JSONArray results = getGxAlertResults("patientId=" + identifier);
-				if (results.length() == 0) {
-					System.out.println("No result found for " + identifier);
-					continue;
+	public void run(DateTime start, DateTime end) throws ParseException,
+			MalformedURLException, JSONException, InstantiationException,
+			IllegalAccessException, ClassNotFoundException, SQLException {
+		StringBuilder param = new StringBuilder();
+		param.append("start=" + DateTimeUtil.toSqlDateString(start.toDate()));
+		param.append("&end=" + DateTimeUtil.toSqlDateString(end.toDate()));
+		JSONArray results = getGxAlertResults(param.toString());
+		if (results.length() == 0) {
+			System.out.println("No result found between " + start + " and "
+					+ end);
+			return;
+		}
+		for (int i = 0; i < results.length(); i++) {
+			JSONObject result = results.getJSONObject(i);
+			// Save GeneXpert result in OpenMRS
+			GeneXpertResult geneXpertResult = new GeneXpertResult();
+			geneXpertResult.fromJson(result);
+
+			if (geneXpertResult.getMtbResult().equals("DETECTED")) {
+				if (geneXpertResult.getMtbBurden() == null) {
+					geneXpertResult.fromJson(result);
 				}
-				// For multiple results, search for the latest one
-				JSONObject result = searchLatestResult(results);
-				// Save GeneXpert result in OpenMRS
-				GeneXpertResult geneXpertResult = new GeneXpertResult();
-				geneXpertResult.fromJson(result);
-				boolean success = saveGeneXpertResult(patientId,
-						encounterLocationId, gxAlertUserId,
-						dateEncounterCreated, geneXpertResult);
-				System.out.println(success);
-			} catch (ParseException e) {
-				e.printStackTrace();
-			} catch (Exception e) {
-				e.printStackTrace();
 			}
+
+			// Skip if the Patient ID scheme does not match
+			if (!geneXpertResult.getPatientId()
+					.matches(Constant.patientIdRegex)) {
+				System.out.println("Patient ID "
+						+ geneXpertResult.getPatientId() + " is invalid!");
+				continue;
+			}
+			// Fetch patient ID against the given identifier in GXP test
+			StringBuilder query = new StringBuilder(
+					"select patient_id from openmrs.patient_identifier where identifier='"
+							+ geneXpertResult.getPatientId() + "'");
+			String str = dbUtil.getValue(query.toString());
+			if (str == null) {
+				System.out.println("Patient ID "
+						+ geneXpertResult.getPatientId() + " not found.");
+				continue;
+			}
+			Integer patientId = Integer.parseInt(str);
+			// Fetch Location ID from Host ID
+			query = new StringBuilder(
+					"select location_id from openmrs.location where name = '"
+							+ geneXpertResult.getHostId() + "'");
+			str = dbUtil.getValue(query.toString());
+			Integer encounterLocationId = 1;
+			if (str != null) {
+				encounterLocationId = Integer.parseInt(str);
+			}
+			DateTime dateCreated = new DateTime(geneXpertResult
+					.getTestEndedOn().getTime());
+			// If an observation is found with same Cartridge ID, then continue
+			StringBuilder filter = new StringBuilder();
+			filter.append("where concept_id = " + Constant.cartridgeConceptId);
+			filter.append(" and value_text = '"
+					+ geneXpertResult.getCartridgeSerial() + "'");
+			// Search for all GX Test forms with missing results
+			long rows = dbUtil.getTotalRows("openmrs.obs", filter.toString());
+			if (rows > 0) {
+				System.out
+						.println("Record already exists against Cartridge ID: "
+								+ geneXpertResult.getCartridgeSerial());
+				continue;
+			}
+			boolean success = saveGeneXpertResult(patientId,
+					encounterLocationId, gxAlertUserId, dateCreated,
+					geneXpertResult);
+			System.out.println("Imported result for "
+					+ geneXpertResult.getPatientId()
+					+ (success ? ": YES" : ": NO"));
 		}
 	}
 
@@ -300,51 +421,269 @@ public class GxAlertMain extends HttpServlet {
 			GeneXpertResult gxp) throws InstantiationException,
 			IllegalAccessException, ClassNotFoundException, SQLException {
 		List<String> queries = new ArrayList<String>();
-		StringBuilder query;
 		Integer encounterId = saveGeneXpertEncounter(patientId,
 				encounterLocationId, gxAlertUserId, dateEncounterCreated);
-		query = new StringBuilder();
+		StringBuilder query;
 		Date obsDate = new Date();
 		try {
 			obsDate = gxp.getTestEndedOn();
 		} catch (Exception e) {
 			e.printStackTrace();
 		}
-		String queryPrefix = "INSERT INTO openmrs.obs (obs_id,person_id,concept_id,encounter_id,obs_datetime,location_id,value_boolean,value_coded,value_datetime,value_numeric,value_text,comments,creator,date_created,voided,uuid) VALUES ";
-		boolean mtbDetected = gxp.getMtbResult().equals("DETECTED");
-		boolean error = gxp.getMtbResult().equals("ERROR");
-		boolean noResult = gxp.getMtbResult().equals("NO RESULT");
-		boolean invalid = gxp.getMtbResult().equals("INVALID");
-		boolean rifDetected = gxp.getRifResult().equals("DETECTED");
-		boolean rifIndeterminate = gxp.getMtbResult().equals("INDETERMINATE");
-		String mtbBurden = "";
+		String insertQueryPrefix = "INSERT INTO openmrs.obs (obs_id,person_id,concept_id,encounter_id,obs_datetime,location_id,value_boolean,value_coded,value_datetime,value_numeric,value_text,comments,creator,date_created,voided,uuid) VALUES ";
 
 		// Queries for error observations
 		if (gxp.getErrorCode() != null) {
-			query = new StringBuilder(queryPrefix);
-			query.append("(0," + patientId + "," + Constant.errorCodeConceptId
-					+ "," + encounterId + ",");
-			query.append("'" + DateTimeUtil.toSqlDateTimeString(obsDate) + "',"
-					+ encounterLocationId + ",NULL,NULL,NULL,");
-			query.append(gxp.getErrorCode() + ",NULL,'Auto-saved by GXAlert.',");
-			query.append(gxAlertUserId + ",");
-			query.append("'" + DateTimeUtil.toSqlDateTimeString(new Date())
-					+ "',0,'" + UUID.randomUUID().toString() + "')");
+			query = getErrorCodeQuery(patientId, encounterLocationId,
+					gxAlertUserId, gxp, encounterId, obsDate, insertQueryPrefix);
 			queries.add(query.toString());
-			query = new StringBuilder(queryPrefix);
-			query.append("(0," + patientId + "," + Constant.errorNotesConceptId
-					+ "," + encounterId + ",");
-			query.append("'" + DateTimeUtil.toSqlDateTimeString(obsDate) + "',"
-					+ encounterLocationId + ",NULL,NULL,NULL,NULL,");
-			query.append("'" + gxp.getErrorNotes()
-					+ "','Auto-saved by GXAlert.',");
-			query.append(",1,'" + DateTimeUtil.toSqlDateTimeString(new Date())
-					+ "',0,'" + UUID.randomUUID().toString() + "')");
+			query = getErrorNotesQuery(patientId, encounterLocationId, gxp,
+					encounterId, obsDate, insertQueryPrefix);
 			queries.add(query.toString());
 		}
 
 		// Query for GXP result observation
-		query = new StringBuilder(queryPrefix);
+		query = getGxpResultQuery(patientId, encounterLocationId,
+				gxAlertUserId, encounterId, obsDate, insertQueryPrefix,
+				gxp.getMtbResult());
+		queries.add(query.toString());
+
+		// Query for MTB Burden observation
+		if (gxp.getMtbResult().equals("DETECTED")) {
+			query = getMtbBurdenQuery(patientId, encounterLocationId,
+					gxAlertUserId, encounterId, obsDate, insertQueryPrefix,
+					gxp.getMtbBurden());
+			queries.add(query.toString());
+		}
+
+		// Query for RIF result observation
+		if (gxp.getRifResult() != null) {
+			boolean rifDetected = gxp.getRifResult().equals("DETECTED");
+			boolean rifIndeterminate = gxp.getMtbResult().equals(
+					"INDETERMINATE");
+			query = getRifResultQuery(patientId, encounterLocationId,
+					gxAlertUserId, encounterId, obsDate, insertQueryPrefix,
+					rifDetected, rifIndeterminate);
+			queries.add(query.toString());
+		}
+
+		// Query for Notes observation
+		if (gxp.getNotes() != null) {
+			String notes = gxp.getNotes().replaceAll("['\"]", "_");
+			query = getNotesQuery(patientId, encounterLocationId,
+					gxAlertUserId, encounterId, obsDate, insertQueryPrefix,
+					notes);
+			queries.add(query.toString());
+		}
+
+		// Query for Cartridge serial no. observation
+		if (gxp.getCartridgeSerial() != null) {
+			long cartridgeNo = gxp.getCartridgeSerial();
+			query = getCartridgeNoQuery(patientId, encounterLocationId,
+					gxAlertUserId, encounterId, obsDate, insertQueryPrefix,
+					cartridgeNo);
+			queries.add(query.toString());
+		}
+
+		// Query for Sample ID observation
+		if (gxp.getSampleId() != null) {
+			String sampleId = gxp.getSampleId();
+			query = getSampleIdQuery(patientId, encounterLocationId,
+					gxAlertUserId, encounterId, obsDate, insertQueryPrefix,
+					sampleId);
+			queries.add(query.toString());
+		}
+
+		// Query for Host ID observation
+		if (gxp.getHostId() != null) {
+			String hostName = gxp.getHostId();
+			query = getHostNameQuery(patientId, encounterLocationId,
+					gxAlertUserId, encounterId, obsDate, insertQueryPrefix,
+					hostName);
+			queries.add(query.toString());
+		}
+
+		// Query for Reagent Lot ID observation
+		if (gxp.getReagentLotId() != null) {
+			long reagentLotNo = gxp.getReagentLotId();
+			query = getReagentLotNoQuery(patientId, encounterLocationId,
+					gxAlertUserId, encounterId, obsDate, insertQueryPrefix,
+					reagentLotNo);
+			queries.add(query.toString());
+		}
+
+		// Query for Module serial no. observation
+		if (gxp.getModuleSerial() != null) {
+			long moduleSerialNo = gxp.getModuleSerial();
+			query = getModuleSerialNoQuery(patientId, encounterLocationId,
+					gxAlertUserId, encounterId, obsDate, insertQueryPrefix,
+					moduleSerialNo);
+			queries.add(query.toString());
+		}
+		for (String string : queries) {
+			try {
+				dbUtil.runCommandWithException(CommandType.INSERT, string);
+			} catch (Exception e) {
+				e.printStackTrace();
+			}
+		}
+		return true;
+	}
+
+	private StringBuilder getModuleSerialNoQuery(int patientId,
+			int encounterLocationId, int gxAlertUserId, Integer encounterId,
+			Date obsDate, String insertQueryPrefix, long moduleSerialNo) {
+		StringBuilder query;
+		query = new StringBuilder(insertQueryPrefix);
+		query.append("(0," + patientId + "," + Constant.moduleSerialConceptId
+				+ "," + encounterId + ",");
+		query.append("'" + DateTimeUtil.toSqlDateTimeString(obsDate) + "',"
+				+ encounterLocationId + ",NULL,NULL,NULL,NULL,");
+		query.append("'" + moduleSerialNo + "','Auto-saved by GXAlert.',");
+		query.append(gxAlertUserId + ",");
+		query.append("'" + DateTimeUtil.toSqlDateTimeString(new Date())
+				+ "',0,'" + UUID.randomUUID().toString() + "')");
+		return query;
+	}
+
+	private StringBuilder getReagentLotNoQuery(int patientId,
+			int encounterLocationId, int gxAlertUserId, Integer encounterId,
+			Date obsDate, String insertQueryPrefix, long reagentLotNo) {
+		StringBuilder query;
+		query = new StringBuilder(insertQueryPrefix);
+		query.append("(0," + patientId + "," + Constant.reagentLotConceptId
+				+ "," + encounterId + ",");
+		query.append("'" + DateTimeUtil.toSqlDateTimeString(obsDate) + "',"
+				+ encounterLocationId + ",NULL,NULL,NULL,");
+		query.append(reagentLotNo + ",NULL,'Auto-saved by GXAlert.',");
+		query.append(gxAlertUserId + ",");
+		query.append("'" + DateTimeUtil.toSqlDateTimeString(new Date())
+				+ "',0,'" + UUID.randomUUID().toString() + "')");
+		return query;
+	}
+
+	private StringBuilder getHostNameQuery(int patientId,
+			int encounterLocationId, int gxAlertUserId, Integer encounterId,
+			Date obsDate, String insertQueryPrefix, String hostName) {
+		StringBuilder query;
+		query = new StringBuilder(insertQueryPrefix);
+		query.append("(0," + patientId + "," + Constant.hostConceptId + ","
+				+ encounterId + ",");
+		query.append("'" + DateTimeUtil.toSqlDateTimeString(obsDate) + "',"
+				+ encounterLocationId + ",NULL,NULL,NULL,NULL,");
+		query.append("'" + hostName + "','Auto-saved by GXAlert.',");
+		query.append(gxAlertUserId + ",");
+		query.append("'" + DateTimeUtil.toSqlDateTimeString(new Date())
+				+ "',0,'" + UUID.randomUUID().toString() + "')");
+		return query;
+	}
+
+	private StringBuilder getSampleIdQuery(int patientId,
+			int encounterLocationId, int gxAlertUserId, Integer encounterId,
+			Date obsDate, String insertQueryPrefix, String sampleId) {
+		StringBuilder query;
+		query = new StringBuilder(insertQueryPrefix);
+		query.append("(0," + patientId + "," + Constant.sampleConceptId + ","
+				+ encounterId + ",");
+		query.append("'" + DateTimeUtil.toSqlDateTimeString(obsDate) + "',"
+				+ encounterLocationId + ",NULL,NULL,NULL,NULL,");
+		query.append("'" + sampleId + "','Auto-saved by GXAlert.',");
+		query.append(gxAlertUserId + ",");
+		query.append("'" + DateTimeUtil.toSqlDateTimeString(new Date())
+				+ "',0,'" + UUID.randomUUID().toString() + "')");
+		return query;
+	}
+
+	private StringBuilder getCartridgeNoQuery(int patientId,
+			int encounterLocationId, int gxAlertUserId, Integer encounterId,
+			Date obsDate, String insertQueryPrefix, long cartridgeNo) {
+		StringBuilder query;
+		query = new StringBuilder(insertQueryPrefix);
+		query.append("(0," + patientId + "," + Constant.cartridgeConceptId
+				+ "," + encounterId + ",");
+		query.append("'" + DateTimeUtil.toSqlDateTimeString(obsDate) + "',"
+				+ encounterLocationId + ",NULL,NULL,NULL,NULL,");
+		query.append("'" + cartridgeNo + "','Auto-saved by GXAlert.',");
+		query.append(gxAlertUserId + ",");
+		query.append("'" + DateTimeUtil.toSqlDateTimeString(new Date())
+				+ "',0,'" + UUID.randomUUID().toString() + "')");
+		return query;
+	}
+
+	private StringBuilder getNotesQuery(int patientId, int encounterLocationId,
+			int gxAlertUserId, Integer encounterId, Date obsDate,
+			String insertQueryPrefix, String notes) {
+		StringBuilder query;
+		query = new StringBuilder(insertQueryPrefix);
+		query.append("(0," + patientId + "," + Constant.notesConceptId + ","
+				+ encounterId + ",");
+		query.append("'" + DateTimeUtil.toSqlDateTimeString(obsDate) + "',"
+				+ encounterLocationId + ",NULL,NULL,NULL,NULL,");
+		query.append("'" + notes + "','Auto-saved by GXAlert.',");
+		query.append(gxAlertUserId + ",");
+		query.append("'" + DateTimeUtil.toSqlDateTimeString(new Date())
+				+ "',0,'" + UUID.randomUUID().toString() + "')");
+		return query;
+	}
+
+	private StringBuilder getRifResultQuery(int patientId,
+			int encounterLocationId, int gxAlertUserId, Integer encounterId,
+			Date obsDate, String insertQueryPrefix, boolean rifDetected,
+			boolean rifIndeterminate) {
+		StringBuilder query;
+		query = new StringBuilder(insertQueryPrefix);
+		query.append("(0," + patientId + "," + Constant.rifResultConceptId
+				+ "," + encounterId + ",");
+		query.append("'" + DateTimeUtil.toSqlDateTimeString(obsDate) + "',"
+				+ encounterLocationId + ",NULL,");
+		if (rifDetected) {
+			query.append(Constant.rifDetectedConceptId + ",");
+		} else if (rifIndeterminate) {
+			query.append(Constant.rifIndeterminateConceptId + ",");
+		} else {
+			query.append(Constant.rifNotDetectedConceptId + ",");
+		}
+		query.append("NULL,NULL,NULL,'Auto-saved by GXAlert.',");
+		query.append(gxAlertUserId + ",");
+		query.append("'" + DateTimeUtil.toSqlDateTimeString(new Date())
+				+ "',0,'" + UUID.randomUUID().toString() + "')");
+		return query;
+	}
+
+	private StringBuilder getMtbBurdenQuery(int patientId,
+			int encounterLocationId, int gxAlertUserId, Integer encounterId,
+			Date obsDate, String insertQueryPrefix, String mtbBurden) {
+		StringBuilder query;
+		query = new StringBuilder(insertQueryPrefix);
+		query.append("(0," + patientId + "," + Constant.mtbBurdenConceptId
+				+ "," + encounterId + ",");
+		query.append("'" + DateTimeUtil.toSqlDateTimeString(obsDate) + "',"
+				+ encounterLocationId + ",NULL,");
+		if (mtbBurden.equals("HIGH")) {
+			query.append(Constant.highConceptId + ",");
+		} else if (mtbBurden.equals("MEDIUM")) {
+			query.append(Constant.mediumConceptId + ",");
+		} else if (mtbBurden.equals("LOW")) {
+			query.append(Constant.lowConceptId + ",");
+		} else {
+			query.append(Constant.veryLowConceptId + ",");
+		}
+		query.append("NULL,NULL,NULL,'Auto-saved by GXAlert.',");
+		query.append(gxAlertUserId + ",");
+		query.append("'" + DateTimeUtil.toSqlDateTimeString(new Date())
+				+ "',0,'" + UUID.randomUUID().toString() + "')");
+		return query;
+	}
+
+	private StringBuilder getGxpResultQuery(int patientId,
+			int encounterLocationId, int gxAlertUserId, Integer encounterId,
+			Date obsDate, String insertQueryPrefix, String mtbResult) {
+		boolean mtbDetected = mtbResult.equals("DETECTED");
+		boolean error = mtbResult.equals("ERROR");
+		boolean noResult = mtbResult.equals("NO RESULT");
+		boolean invalid = mtbResult.equals("INVALID");
+		StringBuilder query;
+		query = new StringBuilder(insertQueryPrefix);
 		query.append("(0," + patientId + "," + Constant.gxpResultConceptId
 				+ "," + encounterId + ",");
 		query.append("'" + DateTimeUtil.toSqlDateTimeString(obsDate) + "',"
@@ -364,151 +703,37 @@ public class GxAlertMain extends HttpServlet {
 		query.append(gxAlertUserId + ",");
 		query.append("'" + DateTimeUtil.toSqlDateTimeString(new Date())
 				+ "',0,'" + UUID.randomUUID().toString() + "')");
-		queries.add(query.toString());
+		return query;
+	}
 
-		// Query for MTB Burden observation
-		if (mtbDetected) {
-			query = new StringBuilder(queryPrefix);
-			query.append("(0," + patientId + "," + Constant.mtbBurdenConceptId
-					+ "," + encounterId + ",");
-			query.append("'" + DateTimeUtil.toSqlDateTimeString(obsDate) + "',"
-					+ encounterLocationId + ",NULL,");
-			if (mtbBurden.equals("HIGH")) {
-				query.append(Constant.highConceptId + ",");
-			} else if (mtbBurden.equals("MEDIUM")) {
-				query.append(Constant.mediumConceptId + ",");
-			} else if (mtbBurden.equals("LOW")) {
-				query.append(Constant.lowConceptId + ",");
-			} else {
-				query.append(Constant.veryLowConceptId + ",");
-			}
-			query.append("NULL,NULL,NULL,'Auto-saved by GXAlert.',");
-			query.append(gxAlertUserId + ",");
-			query.append("'" + DateTimeUtil.toSqlDateTimeString(new Date())
-					+ "',0,'" + UUID.randomUUID().toString() + "')");
-			queries.add(query.toString());
-		}
-
-		// Query for RIF result observation
-		query = new StringBuilder(queryPrefix);
-		query.append("(0," + patientId + "," + Constant.rifResultConceptId
+	private StringBuilder getErrorNotesQuery(int patientId,
+			int encounterLocationId, GeneXpertResult gxp, Integer encounterId,
+			Date obsDate, String insertQueryPrefix) {
+		StringBuilder query;
+		query = new StringBuilder(insertQueryPrefix);
+		query.append("(0," + patientId + "," + Constant.errorNotesConceptId
 				+ "," + encounterId + ",");
 		query.append("'" + DateTimeUtil.toSqlDateTimeString(obsDate) + "',"
-				+ encounterLocationId + ",NULL,");
-		if (rifDetected) {
-			query.append(Constant.rifDetectedConceptId + ",");
-		} else if (rifIndeterminate) {
-			query.append(Constant.rifIndeterminateConceptId + ",");
-		} else {
-			query.append(Constant.rifNotDetectedConceptId + ",");
-		}
-		query.append("NULL,NULL,NULL,'Auto-saved by GXAlert.',");
+				+ encounterLocationId + ",NULL,NULL,NULL,NULL,");
+		query.append("'" + gxp.getErrorNotes() + "','Auto-saved by GXAlert.',");
+		query.append(",1,'" + DateTimeUtil.toSqlDateTimeString(new Date())
+				+ "',0,'" + UUID.randomUUID().toString() + "')");
+		return query;
+	}
+
+	private StringBuilder getErrorCodeQuery(int patientId,
+			int encounterLocationId, int gxAlertUserId, GeneXpertResult gxp,
+			Integer encounterId, Date obsDate, String queryPrefix) {
+		StringBuilder query = new StringBuilder(queryPrefix);
+		query.append("(0," + patientId + "," + Constant.errorCodeConceptId
+				+ "," + encounterId + ",");
+		query.append("'" + DateTimeUtil.toSqlDateTimeString(obsDate) + "',"
+				+ encounterLocationId + ",NULL,NULL,NULL,");
+		query.append(gxp.getErrorCode() + ",NULL,'Auto-saved by GXAlert.',");
 		query.append(gxAlertUserId + ",");
 		query.append("'" + DateTimeUtil.toSqlDateTimeString(new Date())
 				+ "',0,'" + UUID.randomUUID().toString() + "')");
-		queries.add(query.toString());
-
-		// Query for Notes observation
-		if (gxp.getNotes() != null) {
-			String notes = gxp.getNotes();
-			query = new StringBuilder(queryPrefix);
-			query.append("(0," + patientId + "," + Constant.notesConceptId
-					+ "," + encounterId + ",");
-			query.append("'" + DateTimeUtil.toSqlDateTimeString(obsDate) + "',"
-					+ encounterLocationId + ",NULL,NULL,NULL,NULL,");
-			query.append("'" + notes + "','Auto-saved by GXAlert.',");
-			query.append(gxAlertUserId + ",");
-			query.append("'" + DateTimeUtil.toSqlDateTimeString(new Date())
-					+ "',0,'" + UUID.randomUUID().toString() + "')");
-			queries.add(query.toString());
-		}
-
-		// Query for Cartridge serial no. observation
-		if (gxp.getCartridgeSerial() != null) {
-			long cartridgeNo = gxp.getCartridgeSerial();
-			query = new StringBuilder(queryPrefix);
-			query.append("(0," + patientId + "," + Constant.cartridgeConceptId
-					+ "," + encounterId + ",");
-			query.append("'" + DateTimeUtil.toSqlDateTimeString(obsDate) + "',"
-					+ encounterLocationId + ",NULL,NULL,NULL,NULL,");
-			query.append("'" + cartridgeNo + "','Auto-saved by GXAlert.',");
-			query.append(gxAlertUserId + ",");
-			query.append("'" + DateTimeUtil.toSqlDateTimeString(new Date())
-					+ "',0,'" + UUID.randomUUID().toString() + "')");
-			queries.add(query.toString());
-		}
-
-		// Query for Sample ID observation
-		if (gxp.getSampleId() != null) {
-			final int sampleConceptId = 159968;
-			String sampleId = gxp.getSampleId();
-			query = new StringBuilder(queryPrefix);
-			query.append("(0," + patientId + "," + sampleConceptId + ","
-					+ encounterId + ",");
-			query.append("'" + DateTimeUtil.toSqlDateTimeString(obsDate) + "',"
-					+ encounterLocationId + ",NULL,NULL,NULL,NULL,");
-			query.append("'" + sampleId + "','Auto-saved by GXAlert.',");
-			query.append(gxAlertUserId + ",");
-			query.append("'" + DateTimeUtil.toSqlDateTimeString(new Date())
-					+ "',0,'" + UUID.randomUUID().toString() + "')");
-			queries.add(query.toString());
-		}
-
-		// Query for Host ID observation
-		if (gxp.getHostId() != null) {
-			final int hostConceptId = 166069;
-			String hostName = gxp.getHostId();
-			query = new StringBuilder(queryPrefix);
-			query.append("(0," + patientId + "," + hostConceptId + ","
-					+ encounterId + ",");
-			query.append("'" + DateTimeUtil.toSqlDateTimeString(obsDate) + "',"
-					+ encounterLocationId + ",NULL,NULL,NULL,NULL,");
-			query.append("'" + hostName + "','Auto-saved by GXAlert.',");
-			query.append(gxAlertUserId + ",");
-			query.append("'" + DateTimeUtil.toSqlDateTimeString(new Date())
-					+ "',0,'" + UUID.randomUUID().toString() + "')");
-			queries.add(query.toString());
-		}
-
-		// Query for Reagent Lot ID observation
-		if (gxp.getReagentLotId() != null) {
-			final int reagentLotConceptId = 166070;
-			long reagentLotNo = gxp.getReagentLotId();
-			query = new StringBuilder(queryPrefix);
-			query.append("(0," + patientId + "," + reagentLotConceptId + ","
-					+ encounterId + ",");
-			query.append("'" + DateTimeUtil.toSqlDateTimeString(obsDate) + "',"
-					+ encounterLocationId + ",NULL,NULL,NULL,");
-			query.append(reagentLotNo + ",NULL,'Auto-saved by GXAlert.',");
-			query.append(gxAlertUserId + ",");
-			query.append("'" + DateTimeUtil.toSqlDateTimeString(new Date())
-					+ "',0,'" + UUID.randomUUID().toString() + "')");
-			queries.add(query.toString());
-		}
-
-		// Query for Module serial no. observation
-		if (gxp.getModuleSerial() != null) {
-			final int moduleSerialConceptId = 166071;
-			long moduleSerialNo = gxp.getModuleSerial();
-			query = new StringBuilder(queryPrefix);
-			query.append("(0," + patientId + "," + moduleSerialConceptId + ","
-					+ encounterId + ",");
-			query.append("'" + DateTimeUtil.toSqlDateTimeString(obsDate) + "',"
-					+ encounterLocationId + ",NULL,NULL,NULL,NULL,");
-			query.append("'" + moduleSerialNo + "','Auto-saved by GXAlert.',");
-			query.append(gxAlertUserId + ",");
-			query.append("'" + DateTimeUtil.toSqlDateTimeString(new Date())
-					+ "',0,'" + UUID.randomUUID().toString() + "')");
-			queries.add(query.toString());
-		}
-		for (String string : queries) {
-			try {
-				dbUtil.runCommandWithException(CommandType.INSERT, string);
-			} catch (Exception e) {
-				e.printStackTrace();
-			}
-		}
-		return true;
+		return query;
 	}
 
 	/**

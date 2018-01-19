@@ -670,7 +670,7 @@ public class GeneXpertResult implements Serializable {
 			} else {
 				mtbResult = resultText.startsWith("MTB DETECTED") ? "DETECTED"
 						: "NOT DETECTED";
-				if (json.has("mtbBurden")) {
+				if (mtbResult.equals("DETECTED")) {
 					mtbBurden = resultText.contains("MTB DETECTED HIGH") ? "HIGH"
 							: (resultText.contains("MTB DETECTED MEDIUM") ? "MEDIUM"
 									: (resultText.contains("MTB DETECTED LOW") ? "LOW"
