@@ -15,7 +15,6 @@ import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
-import java.io.PrintWriter;
 import java.net.HttpURLConnection;
 import java.net.MalformedURLException;
 import java.net.URL;
@@ -27,13 +26,9 @@ import java.sql.Statement;
 import java.text.ParseException;
 import java.util.ArrayList;
 import java.util.Date;
-import java.util.Enumeration;
 import java.util.List;
 import java.util.Properties;
 import java.util.UUID;
-
-import javax.servlet.http.HttpServletRequest;
-import javax.servlet.http.HttpServletResponse;
 
 import org.apache.log4j.Logger;
 import org.joda.time.DateTime;
@@ -58,12 +53,12 @@ public class GxAlertMain implements java.io.Serializable {
 	private static final Logger log = Logger.getLogger(GxAlertMain.class);
 	private static final String PROP_FILE_NAME = "gfatm-gxalert-integration.properties";
 	private static Properties prop;
-	private String baseUrl;
-	private String apiKey;
-	private String authentication;
-	private int gxAlertUserId;
-	private int fetchDurationHours;
-	private DatabaseUtil dbUtil;
+	private static String baseUrl;
+	private static String apiKey;
+	private static String authentication;
+	private static int gxAlertUserId;
+	private static int fetchDurationHours;
+	private static DatabaseUtil dbUtil;
 
 	public static void main(String[] args) {
 		try {
@@ -88,11 +83,7 @@ public class GxAlertMain implements java.io.Serializable {
 					}
 				}
 			}
-			InputStream inputStream = Thread.currentThread()
-					.getContextClassLoader()
-					.getResourceAsStream(PROP_FILE_NAME);
-			prop = new Properties();
-			prop.load(inputStream);
+			readProperties();
 			// Import all results
 			if (doImportAll) {
 				importAll();
@@ -108,9 +99,17 @@ public class GxAlertMain implements java.io.Serializable {
 		System.exit(0);
 	}
 
-	public GxAlertMain() throws NumberFormatException {
-		String dbUsername = GxAlertMain.prop.getProperty("connection.username");
-		String dbPassword = GxAlertMain.prop.getProperty("connection.password");
+	private static void readProperties() throws IOException {
+		InputStream inputStream = Thread.currentThread()
+				.getContextClassLoader()
+				.getResourceAsStream(PROP_FILE_NAME);
+		prop = new Properties();
+		prop.load(inputStream);
+		// Initiate properties
+		String dbUsername = GxAlertMain.prop
+				.getProperty("connection.username");
+		String dbPassword = GxAlertMain.prop
+				.getProperty("connection.password");
 		String url = GxAlertMain.prop.getProperty("connection.url");
 		String dbName = GxAlertMain.prop
 				.getProperty("connection.default_schema");
@@ -150,14 +149,15 @@ public class GxAlertMain implements java.io.Serializable {
 			JSONException, InstantiationException, IllegalAccessException,
 			ClassNotFoundException, ParseException, SQLException {
 		GxAlertMain gxAlert = new GxAlertMain();
-		String dateStr = gxAlert.dbUtil
+		String dateStr = GxAlertMain.dbUtil
 				.getValue("select ifnull(max(date_created), (select min(date_created) from encounter)) as max_date from encounter where encounter_type = "
 						+ Constant.gxpEncounterType);
-		DateTime start = new DateTime().minusHours(gxAlert.fetchDurationHours);
+		DateTime start = new DateTime()
+				.minusHours(GxAlertMain.fetchDurationHours);
 		if (dateStr != null) {
 			start = new DateTime(DateTimeUtil.fromSqlDateString(dateStr));
 		}
-		DateTime end = start.plusHours(gxAlert.fetchDurationHours);
+		DateTime end = start.plusHours(GxAlertMain.fetchDurationHours);
 		gxAlert.run(start, end);
 	}
 
@@ -178,8 +178,8 @@ public class GxAlertMain implements java.io.Serializable {
 			InstantiationException, IllegalAccessException,
 			ClassNotFoundException, ParseException, SQLException {
 		GxAlertMain gxAlert = new GxAlertMain();
-		String dateStr = gxAlert.dbUtil
-				.getValue("select ifnull(max(date_created), (select min(date_created) from encounter)) as max_date from encounter where encounter_type = "
+		String dateStr = GxAlertMain.dbUtil
+				.getValue("select ifnull(max(encounter_datetime), (select min(encounter_datetime) from encounter)) as max_date from encounter where encounter_type = "
 						+ Constant.gxpEncounterType);
 		DateTime start = new DateTime(DateTimeUtil.fromSqlDateString(dateStr));
 		DateTime end = start.plusDays(1);
@@ -211,34 +211,6 @@ public class GxAlertMain implements java.io.Serializable {
 				.withSecondOfMinute(0);
 		DateTime end = start.plusDays(1).minusSeconds(1);
 		gxAlert.run(start, end);
-	}
-
-	/**
-	 * Method to handle HTTP requests
-	 * 
-	 * @param request
-	 * @param resp
-	 * @throws IOException
-	 * @throws JSONException
-	 */
-	public void handleRequest(HttpServletRequest request,
-			HttpServletResponse resp) throws IOException, JSONException {
-		PrintWriter out = resp.getWriter();
-		StringBuffer requestParams = new StringBuffer();
-		Enumeration<?> names = request.getParameterNames();
-		while (names.hasMoreElements()) {
-			String name = (String) names.nextElement();
-			String value = request.getParameter(name);
-			requestParams.append(name + "=");
-			requestParams.append(value + "&");
-		}
-		JSONArray results = getGxAlertResults(requestParams.toString());
-		if (results == null) {
-			out.write("ERROR! Could not retrieve results.");
-		} else {
-			out.write(results.toString());
-		}
-		out.close();
 	}
 
 	/**
