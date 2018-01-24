@@ -4,7 +4,7 @@
 
 	<groupId>com.ihsinformatics.gfatm</groupId>
 	<artifactId>gfatm-gxalert-integration</artifactId>
-	<version>0.0.1-SNAPSHOT</version>
+	<version>0.1.0-beta</version>
 	<packaging>jar</packaging>
 
 	<name>gfatm-gxalert-integration</name>

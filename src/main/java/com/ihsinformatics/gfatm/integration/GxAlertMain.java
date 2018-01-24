@@ -59,6 +59,7 @@ public class GxAlertMain implements java.io.Serializable {
 	private static int gxAlertUserId;
 	private static int fetchDurationHours;
 	private static DatabaseUtil dbUtil;
+	private static int fetchDelay = 0;
 
 	public static void main(String[] args) {
 		try {
@@ -68,9 +69,21 @@ public class GxAlertMain implements java.io.Serializable {
 			// Check arguments first
 			// -a to import all results day-by-day
 			// -r to import results for a specific date
+			// server
+			// -h or -help or --help or -? to display parameters
 			Date forDate = null;
 			for (int i = 0; i < args.length; i++) {
-				if (args[i].equals("-a")) {
+				if (args[i].equals("-h") || args[i].equals("-help")
+						|| args[i].equals("--help") || args[i].equals("-?")) {
+					StringBuilder usage = new StringBuilder();
+					usage.append("Command usage:\r\n");
+					usage.append("-a to import all results day-by-day\r\n");
+					usage.append("-r to import all results for a specific date (yyyy-MM-dd). E.g. gfatm-gxalert-integration-xxx.jar -r 2017-12-31\r\n");
+					usage.append("-h or -help or --help or -? to display parameters on console\r\n");
+					usage.append("NO parameters to auto-import from last encounter date to current date\r\n");
+					System.out.println(usage.toString());
+					return;
+				} else if (args[i].equals("-a")) {
 					doImportAll = true;
 					doAuto = false;
 				} else if (args[i].equals("-r")) {
@@ -78,8 +91,7 @@ public class GxAlertMain implements java.io.Serializable {
 					doAuto = false;
 					forDate = DateTimeUtil.fromSqlDateString(args[i + 1]);
 					if (forDate == null) {
-						System.out
-								.println("Invalid date provided. Please specify date in SQL format without quotes, i.e. yyyy-MM-dd");
+						log.error("Invalid date provided. Please specify date in SQL format without quotes, i.e. yyyy-MM-dd");
 					}
 				}
 			}
@@ -92,7 +104,7 @@ public class GxAlertMain implements java.io.Serializable {
 			} else if (doAuto) {
 				importAuto();
 			}
-			System.out.println("Import process complete.");
+			log.info("Import process complete.");
 		} catch (Exception e) {
 			e.printStackTrace();
 		}
@@ -101,15 +113,12 @@ public class GxAlertMain implements java.io.Serializable {
 
 	private static void readProperties() throws IOException {
 		InputStream inputStream = Thread.currentThread()
-				.getContextClassLoader()
-				.getResourceAsStream(PROP_FILE_NAME);
+				.getContextClassLoader().getResourceAsStream(PROP_FILE_NAME);
 		prop = new Properties();
 		prop.load(inputStream);
 		// Initiate properties
-		String dbUsername = GxAlertMain.prop
-				.getProperty("connection.username");
-		String dbPassword = GxAlertMain.prop
-				.getProperty("connection.password");
+		String dbUsername = GxAlertMain.prop.getProperty("connection.username");
+		String dbPassword = GxAlertMain.prop.getProperty("connection.password");
 		String url = GxAlertMain.prop.getProperty("connection.url");
 		String dbName = GxAlertMain.prop
 				.getProperty("connection.default_schema");
@@ -125,6 +134,8 @@ public class GxAlertMain implements java.io.Serializable {
 		authentication = prop.getProperty("gxalert.authentication");
 		fetchDurationHours = Integer.parseInt(prop.getProperty(
 				"gxalert.fetch_duration_hours", "24"));
+		fetchDelay = Integer.parseInt(prop.getProperty("gxalert.fetch_delay",
+				"0"));
 		// Get User ID against the user
 		Object userId = dbUtil.runCommand(CommandType.SELECT,
 				"select user_id from openmrs.users where username = '"
@@ -150,7 +161,7 @@ public class GxAlertMain implements java.io.Serializable {
 			ClassNotFoundException, ParseException, SQLException {
 		GxAlertMain gxAlert = new GxAlertMain();
 		String dateStr = GxAlertMain.dbUtil
-				.getValue("select ifnull(max(date_created), (select min(date_created) from encounter)) as max_date from encounter where encounter_type = "
+				.getValue("select ifnull(max(encounter_datetime), (select min(encounter_datetime) from encounter)) as max_date from encounter where encounter_type = "
 						+ Constant.gxpEncounterType);
 		DateTime start = new DateTime()
 				.minusHours(GxAlertMain.fetchDurationHours);
@@ -234,8 +245,7 @@ public class GxAlertMain implements java.io.Serializable {
 		param.append("&end=" + DateTimeUtil.toSqlDateString(end.toDate()));
 		JSONArray results = getGxAlertResults(param.toString());
 		if (results.length() == 0) {
-			System.out.println("No result found between " + start + " and "
-					+ end);
+			log.warn("No result found between " + start + " and " + end);
 			return;
 		}
 		for (int i = 0; i < results.length(); i++) {
@@ -253,8 +263,8 @@ public class GxAlertMain implements java.io.Serializable {
 			// Skip if the Patient ID scheme does not match
 			if (!geneXpertResult.getPatientId()
 					.matches(Constant.patientIdRegex)) {
-				System.out.println("Patient ID "
-						+ geneXpertResult.getPatientId() + " is invalid!");
+				log.warn("Patient ID " + geneXpertResult.getPatientId()
+						+ " is invalid!");
 				continue;
 			}
 			// Fetch patient ID against the given identifier in GXP test
@@ -263,8 +273,8 @@ public class GxAlertMain implements java.io.Serializable {
 							+ geneXpertResult.getPatientId() + "'");
 			String str = dbUtil.getValue(query.toString());
 			if (str == null) {
-				System.out.println("Patient ID "
-						+ geneXpertResult.getPatientId() + " not found.");
+				log.info("Patient ID " + geneXpertResult.getPatientId()
+						+ " not found.");
 				continue;
 			}
 			Integer patientId = Integer.parseInt(str);
@@ -287,17 +297,20 @@ public class GxAlertMain implements java.io.Serializable {
 			// Search for all GX Test forms with missing results
 			long rows = dbUtil.getTotalRows("openmrs.obs", filter.toString());
 			if (rows > 0) {
-				System.out
-						.println("Record already exists against Cartridge ID: "
-								+ geneXpertResult.getCartridgeSerial());
+				log.warn("Record already exists against Cartridge ID: "
+						+ geneXpertResult.getCartridgeSerial());
 				continue;
 			}
 			boolean success = saveGeneXpertResult(patientId,
 					encounterLocationId, gxAlertUserId, dateCreated,
 					geneXpertResult);
-			System.out.println("Imported result for "
-					+ geneXpertResult.getPatientId()
+			log.info("Imported result for " + geneXpertResult.getPatientId()
 					+ (success ? ": YES" : ": NO"));
+			// Add a fetchDelay between two iterations
+			try {
+				Thread.sleep(fetchDelay * 1000);
+			} catch (InterruptedException e) {
+			}
 		}
 	}
 
