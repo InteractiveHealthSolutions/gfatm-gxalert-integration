@@ -91,10 +91,11 @@ public class GxAlertMain implements java.io.Serializable {
 					doAuto = false;
 					forDate = DateTimeUtil.fromSqlDateString(args[i + 1]);
 					if (forDate == null) {
-						log.error("Invalid date provided. Please specify date in SQL format without quotes, i.e. yyyy-MM-dd");
+						log.fatal("Invalid date provided. Please specify date in SQL format without quotes, i.e. yyyy-MM-dd");
 					}
 				}
 			}
+			log.info("Reading properties file.");
 			readProperties();
 			// Import all results
 			if (doImportAll) {
@@ -126,6 +127,13 @@ public class GxAlertMain implements java.io.Serializable {
 				.getProperty("connection.driver_class");
 		dbUtil = new DatabaseUtil(url, dbName, driverName, dbUsername,
 				dbPassword);
+		log.info("Trying to connect with database: "
+				+ (dbUtil.tryConnection() ? "SUCCESS!" : "FAILED!"));
+		if (!dbUtil.tryConnection()) {
+			log.fatal("Unable to connect with database using "
+					+ dbUtil.toString());
+			System.exit(0);
+		}
 		String username = prop.getProperty("gxalert.openmrs.username");
 		gxAlertUserId = Integer.parseInt(prop.getProperty(
 				"gxalert.openmrs.user_id", "427"));
@@ -253,7 +261,6 @@ public class GxAlertMain implements java.io.Serializable {
 			// Save GeneXpert result in OpenMRS
 			GeneXpertResult geneXpertResult = new GeneXpertResult();
 			geneXpertResult.fromJson(result);
-
 			if (geneXpertResult.getMtbResult().equals("DETECTED")) {
 				if (geneXpertResult.getMtbBurden() == null) {
 					geneXpertResult.fromJson(result);
@@ -263,9 +270,26 @@ public class GxAlertMain implements java.io.Serializable {
 			// Skip if the Patient ID scheme does not match
 			if (!geneXpertResult.getPatientId()
 					.matches(Constant.patientIdRegex)) {
+				// Try if it matches with Patient ID2
 				log.warn("Patient ID " + geneXpertResult.getPatientId()
 						+ " is invalid!");
-				continue;
+				if (geneXpertResult.getPatientId2() == null) {
+					continue;
+				} else {
+					if (geneXpertResult.getPatientId2().matches(
+							Constant.patientIdRegex)) {
+						// Swap both IDs
+						String temp = geneXpertResult.getPatientId();
+						geneXpertResult.setPatientId(geneXpertResult
+								.getPatientId2());
+						geneXpertResult.setPatientId2(temp);
+					} else {
+						log.error("Patient ID2 "
+								+ geneXpertResult.getPatientId2()
+								+ " is invalid!");
+						continue;
+					}
+				}
 			}
 			// Fetch patient ID against the given identifier in GXP test
 			StringBuilder query = new StringBuilder(
@@ -278,10 +302,10 @@ public class GxAlertMain implements java.io.Serializable {
 				continue;
 			}
 			Integer patientId = Integer.parseInt(str);
-			// Fetch Location ID from Host ID
+			// Fetch Location ID from Deployment Short Name
 			query = new StringBuilder(
 					"select location_id from openmrs.location where name = '"
-							+ geneXpertResult.getHostId() + "'");
+							+ geneXpertResult.getDeploymentName() + "'");
 			str = dbUtil.getValue(query.toString());
 			Integer encounterLocationId = 1;
 			if (str != null) {
@@ -415,7 +439,7 @@ public class GxAlertMain implements java.io.Serializable {
 		} catch (Exception e) {
 			e.printStackTrace();
 		}
-		String insertQueryPrefix = "INSERT INTO openmrs.obs (obs_id,person_id,concept_id,encounter_id,obs_datetime,location_id,value_boolean,value_coded,value_datetime,value_numeric,value_text,comments,creator,date_created,voided,uuid) VALUES ";
+		String insertQueryPrefix = "INSERT INTO openmrs.obs (obs_id,person_id,concept_id,encounter_id,obs_datetime,location_id,interpretation,value_coded,value_datetime,value_numeric,value_text,comments,creator,date_created,voided,uuid) VALUES ";
 
 		// Queries for error observations
 		if (gxp.getErrorCode() != null) {

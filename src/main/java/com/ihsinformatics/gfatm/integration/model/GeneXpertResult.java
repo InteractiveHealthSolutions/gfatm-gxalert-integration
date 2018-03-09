@@ -32,6 +32,7 @@ public class GeneXpertResult implements Serializable {
 	private static final long serialVersionUID = 1652520571460665819L;
 	public static final String DEFAULT_DATE_FORMAT = "yyyy-MM-dd'T'HH:mm:ss";
 	private String patientId;
+	private String patientId2;
 	private Integer patientAge;
 	private Character patientGender;
 	private String sampleId;
@@ -41,6 +42,7 @@ public class GeneXpertResult implements Serializable {
 	private String rifResult;
 	private String resultText;
 	private String hostId;
+	private String deploymentName;
 	private Date testStartedOn;
 	private Date testEndedOn;
 	private Date updatedOn;
@@ -87,6 +89,7 @@ public class GeneXpertResult implements Serializable {
 
 	/**
 	 * @param patientId
+	 * @param patientId2
 	 * @param patientAge
 	 * @param patientGender
 	 * @param sampleId
@@ -96,6 +99,7 @@ public class GeneXpertResult implements Serializable {
 	 * @param rifResult
 	 * @param resultText
 	 * @param hostId
+	 * @param deploymentName
 	 * @param testStartedOn
 	 * @param testEndedOn
 	 * @param updatedOn
@@ -113,18 +117,20 @@ public class GeneXpertResult implements Serializable {
 	 * @param softwareVersion
 	 * @param probeData
 	 */
-	public GeneXpertResult(String patientId, Integer patientAge,
-			Character patientGender, String sampleId, Long cartridgeSerial,
-			String mtbResult, String mtbBurden, String rifResult,
-			String resultText, String hostId, Date testStartedOn,
-			Date testEndedOn, Date updatedOn, Integer errorCode,
-			String errorNotes, String notes, String user, Long reagentLotId,
-			Long moduleSerial, Long instrumentSerial,
+	public GeneXpertResult(String patientId, String patientId2,
+			Integer patientAge, Character patientGender, String sampleId,
+			Long cartridgeSerial, String mtbResult, String mtbBurden,
+			String rifResult, String resultText, String hostId,
+			String deploymentName,
+			Date testStartedOn, Date testEndedOn, Date updatedOn,
+			Integer errorCode, String errorNotes, String notes, String user,
+			Long reagentLotId, Long moduleSerial, Long instrumentSerial,
 			Date cartridgeExpirationDate, String computerName,
 			String deviceSerial, String assay, String softwareVersion,
 			Map<String, Double> probeData) {
 		super();
 		this.patientId = patientId;
+		this.patientId2 = patientId2;
 		this.patientAge = patientAge;
 		this.patientGender = patientGender;
 		this.sampleId = sampleId;
@@ -133,6 +139,7 @@ public class GeneXpertResult implements Serializable {
 		this.mtbBurden = mtbBurden;
 		this.rifResult = rifResult;
 		this.resultText = resultText;
+		this.deploymentName = deploymentName;
 		this.hostId = hostId;
 		this.testStartedOn = testStartedOn;
 		this.testEndedOn = testEndedOn;
@@ -165,6 +172,21 @@ public class GeneXpertResult implements Serializable {
 	 */
 	public void setPatientId(String patientId) {
 		this.patientId = patientId;
+	}
+
+	/**
+	 * @return the patientId2
+	 */
+	public String getPatientId2() {
+		return patientId2;
+	}
+
+	/**
+	 * @param patientId2
+	 *            the patientId2 to set
+	 */
+	public void setPatientId2(String patientId2) {
+		this.patientId2 = patientId2;
 	}
 
 	/**
@@ -300,6 +322,21 @@ public class GeneXpertResult implements Serializable {
 	 */
 	public void setHostId(String hostId) {
 		this.hostId = hostId;
+	}
+
+	/**
+	 * @return the deploymentName
+	 */
+	public String getDeploymentName() {
+		return deploymentName;
+	}
+
+	/**
+	 * @param deploymentName
+	 *            the deploymentName to set
+	 */
+	public void setDeploymentName(String deploymentName) {
+		this.deploymentName = deploymentName;
 	}
 
 	/**
@@ -583,6 +620,9 @@ public class GeneXpertResult implements Serializable {
 		if (json.has("patientId")) {
 			patientId = String.valueOf(json.get("patientId"));
 		}
+		if (json.has("patientId2")) {
+			patientId2 = String.valueOf(json.get("patientId2"));
+		}
 		if (json.has("patientAge")) {
 			if (!json.isNull("patientAge")) {
 				patientAge = json.getInt("patientAge");
@@ -605,6 +645,9 @@ public class GeneXpertResult implements Serializable {
 		if (json.has("hostId")) {
 			hostId = String.valueOf(json.get("hostId"));
 		}
+		if (json.has("deploymentShortName")) {
+			deploymentName = String.valueOf(json.get("deploymentShortName"));
+		}
 		if (json.has("testStartedOn")) {
 			String dateStr = String.valueOf(json.get("testStartedOn"));
 			testStartedOn = DateTimeUtil.fromString(dateStr,
@@ -612,13 +655,11 @@ public class GeneXpertResult implements Serializable {
 		}
 		if (json.has("testEndedOn")) {
 			String dateStr = String.valueOf(json.get("testEndedOn"));
-			testEndedOn = DateTimeUtil.fromString(dateStr,
-					DEFAULT_DATE_FORMAT);
+			testEndedOn = DateTimeUtil.fromString(dateStr, DEFAULT_DATE_FORMAT);
 		}
 		if (json.has("updatedOn")) {
 			String dateStr = String.valueOf(json.get("updatedOn"));
-			updatedOn = DateTimeUtil.fromString(dateStr,
-					DEFAULT_DATE_FORMAT);
+			updatedOn = DateTimeUtil.fromString(dateStr, DEFAULT_DATE_FORMAT);
 		}
 		if (json.has("notes")) {
 			notes = String.valueOf(json.get("notes"));
@@ -668,12 +709,16 @@ public class GeneXpertResult implements Serializable {
 					errorNotes = String.valueOf(json.get("errorNotes"));
 				}
 			} else {
-				mtbResult = resultText.startsWith("MTB DETECTED") ? "DETECTED"
+				mtbResult = resultText.startsWith("MTB DETECTED")
+						? "DETECTED"
 						: "NOT DETECTED";
 				if (mtbResult.equals("DETECTED")) {
-					mtbBurden = resultText.contains("MTB DETECTED HIGH") ? "HIGH"
-							: (resultText.contains("MTB DETECTED MEDIUM") ? "MEDIUM"
-									: (resultText.contains("MTB DETECTED LOW") ? "LOW"
+					mtbBurden = resultText.contains("MTB DETECTED HIGH")
+							? "HIGH"
+							: (resultText.contains("MTB DETECTED MEDIUM")
+									? "MEDIUM"
+									: (resultText.contains("MTB DETECTED LOW")
+											? "LOW"
 											: "VERY LOW"));
 				}
 				if (resultText.contains("RIF RESISTANCE DETECTED")) {
@@ -698,6 +743,7 @@ public class GeneXpertResult implements Serializable {
 	public JSONObject toJson() {
 		JSONObject json = new JSONObject();
 		json.put("patientId", patientId);
+		json.put("patientId2", patientId2);
 		json.put("patientAge", patientAge);
 		json.put("patientGender", patientGender);
 		json.put("sampleId", sampleId);
@@ -707,6 +753,7 @@ public class GeneXpertResult implements Serializable {
 		json.put("rifResult", rifResult);
 		json.put("resultText", resultText);
 		json.put("hostId", hostId);
+		json.put("deploymentName", deploymentName);
 		json.put(
 				"testStartedOn",
 				testStartedOn == null ? null : DateTimeUtil
@@ -715,7 +762,8 @@ public class GeneXpertResult implements Serializable {
 				"testEndedOn",
 				testEndedOn == null ? null : DateTimeUtil
 						.toSqlDateString(testEndedOn));
-		json.put("updatedOn",
+		json.put(
+				"updatedOn",
 				updatedOn == null ? null : DateTimeUtil
 						.toSqlDateString(updatedOn));
 		json.put("errorCode", errorCode);
@@ -725,9 +773,9 @@ public class GeneXpertResult implements Serializable {
 		json.put("reagentLotId", reagentLotId);
 		json.put("moduleSerial", moduleSerial);
 		json.put("instrumentSerial", instrumentSerial);
-		json.put("cartridgeExpirationDate",
-				cartridgeExpirationDate == null ? null : DateTimeUtil
-						.toSqlDateString(cartridgeExpirationDate));
+		json.put("cartridgeExpirationDate", cartridgeExpirationDate == null
+				? null
+				: DateTimeUtil.toSqlDateString(cartridgeExpirationDate));
 		json.put("computerName", computerName);
 		json.put("deviceSerial", deviceSerial);
 		json.put("assay", assay);
@@ -738,15 +786,16 @@ public class GeneXpertResult implements Serializable {
 
 	@Override
 	public String toString() {
-		return patientId + ", " + patientAge + ", " + patientGender + ", "
-				+ sampleId + ", " + cartridgeSerial + ", " + mtbResult + ", "
-				+ mtbBurden + ", " + rifResult + ", " + resultText + ", "
-				+ hostId + ", " + testStartedOn + ", " + testEndedOn + ", "
-				+ updatedOn + ", " + errorCode + ", " + errorNotes + ", "
-				+ notes + ", " + user + ", " + reagentLotId + ", "
-				+ moduleSerial + ", " + instrumentSerial + ", "
-				+ cartridgeExpirationDate + ", " + computerName + ", "
-				+ deviceSerial + ", " + assay + ", " + softwareVersion + ", "
-				+ "probeData={" + probeData.toString() + "}";
+		return patientId + ", " + patientId2 + ", " + patientAge + ", "
+				+ patientGender + ", " + sampleId + ", " + cartridgeSerial
+				+ ", " + mtbResult + ", " + mtbBurden + ", " + rifResult + ", "
+				+ resultText + ", " + hostId + ", " + deploymentName + ", "
+				+ testStartedOn + ", " + testEndedOn + ", " + updatedOn + ", "
+				+ errorCode + ", " + errorNotes + ", " + notes + ", " + user
+				+ ", " + reagentLotId + ", " + moduleSerial + ", "
+				+ instrumentSerial + ", " + cartridgeExpirationDate + ", "
+				+ computerName + ", " + deviceSerial + ", " + assay + ", "
+				+ softwareVersion + ", " + "probeData={" + probeData.toString()
+				+ "}";
 	}
 }
