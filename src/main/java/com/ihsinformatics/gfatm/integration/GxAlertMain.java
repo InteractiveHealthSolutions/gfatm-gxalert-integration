@@ -54,7 +54,6 @@ public class GxAlertMain implements java.io.Serializable {
 	private static final long serialVersionUID = -4482413651235453707L;
 	private static final Logger log = Logger.getLogger(GxAlertMain.class);
 	private static final String PROP_FILE_NAME = "gfatm-gxalert-integration.properties";
-	private static Properties prop;
 	private static String baseUrl;
 	private static String apiKey;
 	private static String authentication;
@@ -85,7 +84,7 @@ public class GxAlertMain implements java.io.Serializable {
 							"-r to import all results for a specific date (yyyy-MM-dd). E.g. gfatm-gxalert-integration-xxx.jar -r 2017-12-31\r\n");
 					usage.append("-h or -help or --help or -? to display parameters on console\r\n");
 					usage.append("NO parameters to auto-import from last encounter date to current date\r\n");
-					System.out.println(usage.toString());
+					log.info(usage.toString());
 					return;
 				} else if (args[i].equals("-a")) {
 					doImportAll = true;
@@ -113,7 +112,7 @@ public class GxAlertMain implements java.io.Serializable {
 			}
 			log.info("Import process complete.");
 		} catch (Exception e) {
-			e.printStackTrace();
+			log.error(e.getMessage());
 		}
 		System.exit(0);
 	}
@@ -122,13 +121,14 @@ public class GxAlertMain implements java.io.Serializable {
 	 * Get all locations and store in memory to save extra query executions
 	 */
 	public static void getLocations() {
-		Object[][] data = dbUtil.getTableData("location", "location_id,name", "retired=0", true);
+		Object[][] data = dbUtil.getTableData("openmrs.location", "location_id,name", "retired=0", true);
 		locations = new HashMap<String, Integer>(200);
 		for (Object[] row : data) {
 			Integer id = 1;
 			try {
 				id = Integer.parseInt(row[0].toString());
 			} catch (Exception e) {
+				log.error(e.getMessage());
 			}
 			String name = row[1].toString();
 			locations.put(name, id);
@@ -142,14 +142,14 @@ public class GxAlertMain implements java.io.Serializable {
 	 */
 	private static void readProperties() throws IOException {
 		InputStream inputStream = Thread.currentThread().getContextClassLoader().getResourceAsStream(PROP_FILE_NAME);
-		prop = new Properties();
+		Properties prop = new Properties();
 		prop.load(inputStream);
 		// Initiate properties
-		String dbUsername = GxAlertMain.prop.getProperty("connection.username");
-		String dbPassword = GxAlertMain.prop.getProperty("connection.password");
-		String url = GxAlertMain.prop.getProperty("connection.url");
-		String dbName = GxAlertMain.prop.getProperty("connection.default_schema");
-		String driverName = GxAlertMain.prop.getProperty("connection.driver_class");
+		String dbUsername = prop.getProperty("connection.username");
+		String dbPassword = prop.getProperty("connection.password");
+		String url = prop.getProperty("connection.url");
+		String dbName = prop.getProperty("connection.default_schema");
+		String driverName = prop.getProperty("connection.driver_class");
 		dbUtil = new DatabaseUtil(url, dbName, driverName, dbUsername, dbPassword);
 		log.info("Trying to connect with database: " + (dbUtil.tryConnection() ? "SUCCESS!" : "FAILED!"));
 		if (!dbUtil.tryConnection()) {
@@ -185,9 +185,15 @@ public class GxAlertMain implements java.io.Serializable {
 	public static void importAuto() throws MalformedURLException, JSONException, InstantiationException,
 			IllegalAccessException, ClassNotFoundException, ParseException, SQLException {
 		GxAlertMain gxAlert = new GxAlertMain();
+		StringBuilder query = new StringBuilder();
+		query.append(
+				"select ifnull(max(encounter_datetime), (select min(encounter_datetime) from encounter)) as max_date from encounter where encounter_type = ");
+		query.append(Constant.gxpEncounterType);
+		// Also restrict to the results entered by GXAlert user
+		query.append(" and ");
+		query.append("creator = " + gxAlertUserId);
 		String dateStr = GxAlertMain.dbUtil.getValue(
-				"select ifnull(max(encounter_datetime), (select min(encounter_datetime) from encounter)) as max_date from encounter where encounter_type = "
-						+ Constant.gxpEncounterType);
+				query.toString());
 		DateTime start = new DateTime().minusHours(GxAlertMain.fetchDurationHours);
 		if (dateStr != null) {
 			start = new DateTime(DateTimeUtil.fromSqlDateString(dateStr));
@@ -249,16 +255,15 @@ public class GxAlertMain implements java.io.Serializable {
 	 * 
 	 * @param start
 	 * @param end
-	 * @throws ParseException
-	 * @throws JSONException
 	 * @throws MalformedURLException
-	 * @throws SQLException
 	 * @throws ClassNotFoundException
 	 * @throws IllegalAccessException
 	 * @throws InstantiationException
+	 * @throws SQLException
 	 */
-	public void run(DateTime start, DateTime end) throws ParseException, MalformedURLException, JSONException,
-			InstantiationException, IllegalAccessException, ClassNotFoundException, SQLException {
+	public void run(DateTime start, DateTime end)
+			throws MalformedURLException, InstantiationException, IllegalAccessException, ClassNotFoundException,
+			SQLException {
 		StringBuilder param = new StringBuilder();
 		param.append("start=" + DateTimeUtil.toSqlDateString(start.toDate()));
 		param.append("&end=" + DateTimeUtil.toSqlDateString(end.toDate()));
@@ -271,11 +276,15 @@ public class GxAlertMain implements java.io.Serializable {
 			JSONObject result = results.getJSONObject(i);
 			// Save GeneXpert result in OpenMRS
 			GeneXpertResult geneXpertResult = new GeneXpertResult();
-			geneXpertResult.fromJson(result);
-			if (geneXpertResult.getMtbResult().equals("DETECTED")) {
-				if (geneXpertResult.getMtbBurden() == null) {
-					geneXpertResult.fromJson(result);
+			try {
+				geneXpertResult.fromJson(result);
+				if (geneXpertResult.getMtbResult().equals("DETECTED")) {
+					if (geneXpertResult.getMtbBurden() == null) {
+						geneXpertResult.fromJson(result);
+					}
 				}
+			} catch (ParseException e1) {
+				e1.printStackTrace();
 			}
 
 			// Skip if the Patient ID scheme does not match
@@ -307,21 +316,19 @@ public class GxAlertMain implements java.io.Serializable {
 			}
 			Integer patientId = Integer.parseInt(str);
 			// Fetch Location ID from Deployment Short Name
-			// query = new StringBuilder(
-			// "select location_id from openmrs.location where name = '"
-			// + geneXpertResult.getDeploymentName() + "'");
-			// str = dbUtil.getValue(query.toString());
 			Integer encounterLocationId = locations.get(geneXpertResult.getDeploymentName());
-			if (str != null) {
-				encounterLocationId = Integer.parseInt(str);
-			}
 			DateTime dateCreated = new DateTime(geneXpertResult.getTestEndedOn().getTime());
 			// If an observation is found with same Cartridge ID, then continue
 			StringBuilder filter = new StringBuilder();
 			filter.append("where concept_id = " + Constant.cartridgeConceptId);
 			filter.append(" and value_text = '" + geneXpertResult.getCartridgeSerial() + "'");
 			// Search for all GX Test forms with missing results
-			long rows = dbUtil.getTotalRows("openmrs.obs", filter.toString());
+			long rows = -1;
+			try {
+				rows = dbUtil.getTotalRows("openmrs.obs", filter.toString());
+			} catch (SQLException e1) {
+				e1.printStackTrace();
+			}
 			if (rows > 0) {
 				log.warn("Record already exists against Cartridge ID: " + geneXpertResult.getCartridgeSerial());
 				continue;
@@ -332,7 +339,8 @@ public class GxAlertMain implements java.io.Serializable {
 			// Add a fetchDelay between two iterations
 			try {
 				Thread.sleep(fetchDelay * 1000);
-			} catch (InterruptedException e) {
+			} catch (Exception e) {
+				log.error(e.getMessage());
 			}
 		}
 	}
@@ -397,7 +405,7 @@ public class GxAlertMain implements java.io.Serializable {
 			}
 			conn.disconnect();
 		} catch (Exception e) {
-			e.printStackTrace();
+			log.error(e.getMessage());
 		}
 		if (response == null) {
 			return null;
@@ -429,7 +437,7 @@ public class GxAlertMain implements java.io.Serializable {
 		try {
 			obsDate = gxp.getTestEndedOn();
 		} catch (Exception e) {
-			e.printStackTrace();
+			log.error(e.getMessage());
 		}
 		String insertQueryPrefix = "INSERT INTO openmrs.obs (obs_id,person_id,concept_id,encounter_id,obs_datetime,location_id,interpretation,value_coded,value_datetime,value_numeric,value_text,comments,creator,date_created,voided,uuid) VALUES ";
 
@@ -510,11 +518,16 @@ public class GxAlertMain implements java.io.Serializable {
 					insertQueryPrefix, moduleSerialNo);
 			queries.add(query.toString());
 		}
-		for (String string : queries) {
+		for (String q : queries) {
 			try {
-				dbUtil.runCommandWithException(CommandType.INSERT, string);
+				dbUtil.runCommandWithException(CommandType.INSERT, q);
 			} catch (Exception e) {
-				e.printStackTrace();
+				StringBuilder message = new StringBuilder();
+				message.append("Query failed: ");
+				message.append(query);
+				message.append("\r\nException: ");
+				message.append(e.getMessage());
+				log.error(message.toString());
 			}
 		}
 		return true;
