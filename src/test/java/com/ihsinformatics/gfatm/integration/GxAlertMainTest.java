@@ -15,20 +15,22 @@ Interactive Health Solutions, hereby disclaims all copyright interest in this pr
  */
 package com.ihsinformatics.gfatm.integration;
 
-import java.io.BufferedReader;
-import java.io.IOException;
-import java.io.InputStream;
-import java.io.InputStreamReader;
-import java.net.HttpURLConnection;
-import java.net.URL;
+import static org.mockito.Matchers.any;
+import static org.mockito.Mockito.times;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.when;
 
 import org.joda.time.DateTime;
 import org.json.JSONArray;
-import org.junit.AfterClass;
-import org.junit.Assert;
-import org.junit.BeforeClass;
-import org.junit.Ignore;
+import org.junit.Before;
 import org.junit.Test;
+import org.mockito.InjectMocks;
+import org.mockito.Mock;
+import org.mockito.MockitoAnnotations;
+
+import com.ihsinformatics.util.ClassLoaderUtil;
+import com.ihsinformatics.util.DatabaseUtil;
+import com.ihsinformatics.util.FileUtil;
 
 /**
  * @author owais.hussain@ihsinformatics.com
@@ -36,112 +38,198 @@ import org.junit.Test;
  */
 public class GxAlertMainTest {
 
-	private static final String URL = "http://127.0.0.1:8888/gxalert.jsp";
+	@Mock
+	DatabaseUtil dbUtil;
+
+	@InjectMocks
+	GxAlertMain gxAlert;
+
+	private static final String TEST_DATA_FILE = "test_data.json";
+	private JSONArray data;
 
 	/**
 	 * @throws java.lang.Exception
 	 */
-	@BeforeClass
-	public static void setUpBeforeClass() throws Exception {
+	@Before
+	public void setup() throws Exception {
+		MockitoAnnotations.initMocks(this);
+		data = new JSONArray();
+		String filePath = ClassLoaderUtil.getResource(TEST_DATA_FILE, GxAlertMain.class).getPath();
+		FileUtil fu = new FileUtil();
+		data = new JSONArray(fu.getText(filePath));
 	}
 
 	/**
-	 * @throws java.lang.Exception
-	 */
-	@AfterClass
-	public static void tearDownAfterClass() throws Exception {
-	}
-
-	public JSONArray httpRequest(URL url) throws IOException {
-		HttpURLConnection httpConnection = null;
-		int responseCode = 0;
-		httpConnection = (HttpURLConnection) url.openConnection();
-		httpConnection.setRequestMethod("GET");
-		httpConnection.setRequestProperty("User-Agent", "Mozilla/5.0");
-		httpConnection.setRequestProperty("Accept-Language", "en-US,en;q=0.5");
-		httpConnection.setDoOutput(true);
-		httpConnection.connect();
-		responseCode = httpConnection.getResponseCode();
-		System.out.println("\nSending 'GET' request to URL : " + url);
-		if (responseCode == HttpURLConnection.HTTP_OK) {
-			InputStream inputStream = httpConnection.getInputStream();
-			InputStreamReader inputStreamReader = new InputStreamReader(
-					inputStream);
-			BufferedReader in = new BufferedReader(inputStreamReader);
-			String inputLine;
-			StringBuffer responseBuffer = new StringBuffer();
-			while ((inputLine = in.readLine()) != null) {
-				responseBuffer.append(inputLine);
-			}
-			in.close();
-			httpConnection.disconnect();
-			return new JSONArray(responseBuffer.toString());
-		}
-		return null;
-	}
-
-	/**
-	 * Test method to fetch GeneXpert results by Patient ID
+	 * Test method for
+	 * {@link com.ihsinformatics.gfatm.integration.GxAlertMain#getLocations()}.
 	 */
 	@Test
-	public final void testGetGxAlertResultByPatientID() {
-		String queryString = "?patientId=VFG2K-4";
-		URL url;
+	public final void testGetLocations() {
+		Object[][] data = { { 1, "IHS" }, { 2, "IRD" }, { 3, "CHS" } };
+		when(dbUtil.getTableData(any(String.class), any(String.class), any(String.class), any(Boolean.class)))
+				.thenReturn(data);
+		gxAlert.getLocations();
+		verify(dbUtil, times(1)).getTableData(any(String.class), any(String.class), any(String.class),
+				any(Boolean.class));
+	}
+
+	/**
+	 * Test method for
+	 * {@link com.ihsinformatics.gfatm.integration.GxAlertMain#run(org.joda.time.DateTime, org.joda.time.DateTime)}.
+	 */
+	@Test
+	public final void testRun() {
+		DateTime start = new DateTime().minusDays(7);
+		DateTime end = new DateTime();
 		try {
-			url = new URL(URL + queryString);
-			JSONArray jsonArray = httpRequest(url);
-			Assert.assertTrue("Should return at least one record.",
-					jsonArray.length() > 0);
+			gxAlert.run(start, end);
 		} catch (Exception e) {
-			Assert.fail("Exception: " + e.getMessage());
+			e.printStackTrace();
 		}
 	}
 
 	/**
-	 * Test method to fetch GeneXpert results by Cartridge ID
+	 * Test method for
+	 * {@link com.ihsinformatics.gfatm.integration.GxAlertMain#processResult(com.ihsinformatics.gfatm.integration.model.GeneXpertResult)}.
 	 */
 	@Test
-	public final void testGetGxAlertResultByCartridgeSerial() {
-		String queryString = "?cartridgeId=587024931";
-		URL url;
-		try {
-			url = new URL(URL + queryString);
-			JSONArray jsonArray = httpRequest(url);
-			Assert.assertTrue("Should return at least one record.",
-					jsonArray.length() > 0);
-		} catch (Exception e) {
-			Assert.fail("Exception: " + e.getMessage());
-		}
+	public final void testProcessResult() {
+		// TODO
 	}
 
 	/**
-	 * Test method to fetch GeneXpert results by Cartridge ID
+	 * Test method for
+	 * {@link com.ihsinformatics.gfatm.integration.GxAlertMain#searchLatestResult(org.json.JSONArray)}.
 	 */
 	@Test
-	@Ignore
-	public final void testGetGxAlertResultByDateFinished() {
-		new DateTime().withDate(2017, 10, 1);
-		String queryString = "???";
-		URL url;
-		try {
-			url = new URL(URL + queryString);
-			JSONArray jsonArray = httpRequest(url);
-			Assert.assertTrue("Should return at least one record.",
-					jsonArray.length() > 0);
-		} catch (Exception e) {
-			Assert.fail("Exception: " + e.getMessage());
-		}
+	public final void testSearchLatestResult() {
+		// TODO
 	}
 
+	/**
+	 * Test method for
+	 * {@link com.ihsinformatics.gfatm.integration.GxAlertMain#getGxAlertResults(java.lang.String)}.
+	 */
 	@Test
-	public final void testSearchLatestGeneXpertResult() {
+	public final void testGetGxAlertResults() {
+		// TODO
 	}
 
+	/**
+	 * Test method for
+	 * {@link com.ihsinformatics.gfatm.integration.GxAlertMain#saveGeneXpertResult(int, int, int, org.joda.time.DateTime, com.ihsinformatics.gfatm.integration.model.GeneXpertResult)}.
+	 */
 	@Test
 	public final void testSaveGeneXpertResult() {
+		// TODO
 	}
 
+	/**
+	 * Test method for
+	 * {@link com.ihsinformatics.gfatm.integration.GxAlertMain#getModuleSerialNoQuery(int, int, int, java.lang.Integer, java.util.Date, java.lang.String, long)}.
+	 */
+	@Test
+	public final void testGetModuleSerialNoQuery() {
+		// TODO
+	}
+
+	/**
+	 * Test method for
+	 * {@link com.ihsinformatics.gfatm.integration.GxAlertMain#getReagentLotNoQuery(int, int, int, java.lang.Integer, java.util.Date, java.lang.String, long)}.
+	 */
+	@Test
+	public final void testGetReagentLotNoQuery() {
+		// TODO
+	}
+
+	/**
+	 * Test method for
+	 * {@link com.ihsinformatics.gfatm.integration.GxAlertMain#getHostNameQuery(int, int, int, java.lang.Integer, java.util.Date, java.lang.String, java.lang.String)}.
+	 */
+	@Test
+	public final void testGetHostNameQuery() {
+		// TODO
+	}
+
+	/**
+	 * Test method for
+	 * {@link com.ihsinformatics.gfatm.integration.GxAlertMain#getSampleIdQuery(int, int, int, java.lang.Integer, java.util.Date, java.lang.String, java.lang.String)}.
+	 */
+	@Test
+	public final void testGetSampleIdQuery() {
+		// TODO
+	}
+
+	/**
+	 * Test method for
+	 * {@link com.ihsinformatics.gfatm.integration.GxAlertMain#getCartridgeNoQuery(int, int, int, java.lang.Integer, java.util.Date, java.lang.String, long)}.
+	 */
+	@Test
+	public final void testGetCartridgeNoQuery() {
+		// TODO
+	}
+
+	/**
+	 * Test method for
+	 * {@link com.ihsinformatics.gfatm.integration.GxAlertMain#getNotesQuery(int, int, int, java.lang.Integer, java.util.Date, java.lang.String, java.lang.String)}.
+	 */
+	@Test
+	public final void testGetNotesQuery() {
+		// TODO
+	}
+
+	/**
+	 * Test method for
+	 * {@link com.ihsinformatics.gfatm.integration.GxAlertMain#getRifResultQuery(int, int, int, java.lang.Integer, java.util.Date, java.lang.String, boolean, boolean)}.
+	 */
+	@Test
+	public final void testGetRifResultQuery() {
+		// TODO
+	}
+
+	/**
+	 * Test method for
+	 * {@link com.ihsinformatics.gfatm.integration.GxAlertMain#getMtbBurdenQuery(int, int, int, java.lang.Integer, java.util.Date, java.lang.String, java.lang.String)}.
+	 */
+	@Test
+	public final void testGetMtbBurdenQuery() {
+		// TODO
+	}
+
+	/**
+	 * Test method for
+	 * {@link com.ihsinformatics.gfatm.integration.GxAlertMain#getGxpResultQuery(int, int, int, java.lang.Integer, java.util.Date, java.lang.String, java.lang.String)}.
+	 */
+	@Test
+	public final void testGetGxpResultQuery() {
+		// TODO
+	}
+
+	/**
+	 * Test method for
+	 * {@link com.ihsinformatics.gfatm.integration.GxAlertMain#getErrorNotesQuery(int, int, com.ihsinformatics.gfatm.integration.model.GeneXpertResult, java.lang.Integer, java.util.Date, java.lang.String)}.
+	 */
+	@Test
+	public final void testGetErrorNotesQuery() {
+		// TODO
+	}
+
+	/**
+	 * Test method for
+	 * {@link com.ihsinformatics.gfatm.integration.GxAlertMain#getErrorCodeQuery(int, int, int, com.ihsinformatics.gfatm.integration.model.GeneXpertResult, java.lang.Integer, java.util.Date, java.lang.String)}.
+	 */
+	@Test
+	public final void testGetErrorCodeQuery() {
+		// TODO
+	}
+
+	/**
+	 * Test method for
+	 * {@link com.ihsinformatics.gfatm.integration.GxAlertMain#saveGeneXpertEncounter(int, int, int, org.joda.time.DateTime)}.
+	 */
 	@Test
 	public final void testSaveGeneXpertEncounter() {
+		// TODO
 	}
+
 }
