@@ -56,10 +56,10 @@ public class GxAlertMain implements Serializable {
 	private static final Logger log = Logger.getLogger(GxAlertMain.class);
 	private static final String PROP_FILE_NAME = "gfatm-gxalert-integration.properties";
 	private static Properties properties = new Properties();
+	private static DatabaseUtil dbUtil;
 	private int gxAlertUserId;
 	private int fetchDurationHours;
 	private int fetchDelay;
-	private transient DatabaseUtil dbUtil;
 	private Map<String, Integer> locations;
 
 	public static void main(String[] args) {
