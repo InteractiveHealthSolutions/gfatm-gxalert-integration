@@ -64,6 +64,8 @@ public class GeneXpertResultTest {
 				"{\"resultText\":\"MTB DETECTED MEDIUM|Rif Resistance NOT DETECTED\",\"notes\":\"TBH KHAIRPUR\",\"patientId\":\"MUSHTAQUE\",\"testStartedOn\":\"2017-11-18T09:54:50\",\"instrumentSerial\":\"722049\",\"patientGender\":1,\"insertedOn\":\"2017-11-18T06:36:00\",\"errorCode\":null,\"assayVersion\":\"5\",\"errorNotes\":null,\"probeData\":{\"qc2Endpt\":0,\"a\":null,\"qc2\":null,\"b\":null,\"c\":null,\"eEndpt\":111,\"d\":null,\"e\":null,\"spc\":null,\"bEndpt\":99,\"spcEndpt\":236,\"qc1Endpt\":0,\"bCt\":21.8,\"aCt\":19.7,\"cEndpt\":196,\"dCt\":20.9,\"cCt\":20.4,\"qc1Ct\":0,\"eCt\":21.6,\"qc2Ct\":0,\"aEndpt\":133,\"qc1\":null,\"spcCt\":26.3,\"dEndpt\":212},\"testEndedOn\":\"2017-11-18T11:36:43\",\"systemName\":null,\"computerName\":null,\"programName\":\"API User\",\"patientAge\":40,\"patientAgeMonths\":-1,\"cartridgeSerial\":\"277697115\",\"patientAddress\":null,\"result2\":4,\"result1\":5,\"salt\":null,\"programCode\":null,\"sampleId\":\"S9-01-0959-17\",\"messageSentOn\":\"2017-11-18T07:54:41\",\"hostId\":\"TB Hospital-Khairpur\",\"updatedOn\":\"2017-11-18T07:54:40\",\"patientPhone\":null,\"cartridgeExpirationDate\":\"2018-08-19T23:59:59\",\"patientAgeYears\":40,\"deviceSerial\":\"CepheidAdmin-PC\",\"assay\":\"Xpert MTB-RIF Assay G4\",\"reagentLotId\":\"37504\",\"user\":\"TBH-KHAIRPUR\",\"softwareVersion\":\"4.8\",\"moduleSerial\":\"693876\"}"));
 		examples.put(new JSONObject(
 				"{\"resultText\":\"MTB DETECTED LOW|Rif Resistance NOT DETECTED\",\"notes\":\"ICD KOTRI\",\"patientId\":\"MUSHTAQUE\",\"testStartedOn\":\"2017-11-24T10:10:03\",\"instrumentSerial\":\"719355\",\"patientGender\":1,\"insertedOn\":\"2017-11-24T06:50:35\",\"errorCode\":null,\"assayVersion\":\"5\",\"errorNotes\":null,\"probeData\":{\"qc2Endpt\":0,\"a\":null,\"qc2\":null,\"b\":null,\"c\":null,\"eEndpt\":104,\"d\":null,\"e\":null,\"spc\":null,\"bEndpt\":108,\"spcEndpt\":230,\"qc1Endpt\":0,\"bCt\":23.5,\"aCt\":22.4,\"cEndpt\":173,\"dCt\":23.4,\"cCt\":22.8,\"qc1Ct\":0,\"eCt\":24,\"qc2Ct\":0,\"aEndpt\":110,\"qc1\":null,\"spcCt\":28.7,\"dEndpt\":160},\"testEndedOn\":\"2017-11-24T11:51:16\",\"systemName\":null,\"computerName\":null,\"programName\":\"API User\",\"patientAge\":60,\"patientAgeMonths\":-1,\"cartridgeSerial\":\"586026395\",\"patientAddress\":null,\"result2\":4,\"result1\":5,\"salt\":null,\"programCode\":null,\"sampleId\":\"S2-01-7044-17\",\"messageSentOn\":\"2017-11-25T05:18:51\",\"hostId\":\"ICD-Kotri\",\"updatedOn\":\"2017-11-25T05:18:50\",\"patientPhone\":null,\"cartridgeExpirationDate\":\"2018-11-04T23:59:59\",\"patientAgeYears\":60,\"deviceSerial\":\"cephied-PC\",\"assay\":\"Xpert MTB-RIF Assay G4\",\"reagentLotId\":\"22103\",\"user\":\"ICD-KOTRI\",\"softwareVersion\":\"4.7b\",\"moduleSerial\":\"685257\"}"));
+		examples.put(new JSONObject(
+				"{\"resultText\":\"MTB Trace DETECTED|Rif Resistance INDETERMINATE\",\"notes\":\"ICD KOTRI\",\"patientId\":\"MUSHTAQUE\",\"testStartedOn\":\"2017-11-24T10:10:03\",\"instrumentSerial\":\"719355\",\"patientGender\":1,\"insertedOn\":\"2017-11-24T06:50:35\",\"errorCode\":null,\"assayVersion\":\"5\",\"errorNotes\":null,\"probeData\":{\"qc2Endpt\":0,\"a\":null,\"qc2\":null,\"b\":null,\"c\":null,\"eEndpt\":104,\"d\":null,\"e\":null,\"spc\":null,\"bEndpt\":108,\"spcEndpt\":230,\"qc1Endpt\":0,\"bCt\":23.5,\"aCt\":22.4,\"cEndpt\":173,\"dCt\":23.4,\"cCt\":22.8,\"qc1Ct\":0,\"eCt\":24,\"qc2Ct\":0,\"aEndpt\":110,\"qc1\":null,\"spcCt\":28.7,\"dEndpt\":160},\"testEndedOn\":\"2017-11-24T11:51:16\",\"systemName\":null,\"computerName\":null,\"programName\":\"API User\",\"patientAge\":60,\"patientAgeMonths\":-1,\"cartridgeSerial\":\"586026395\",\"patientAddress\":null,\"result2\":4,\"result1\":5,\"salt\":null,\"programCode\":null,\"sampleId\":\"S2-01-7044-17\",\"messageSentOn\":\"2017-11-25T05:18:51\",\"hostId\":\"ICD-Kotri\",\"updatedOn\":\"2017-11-25T05:18:50\",\"patientPhone\":null,\"cartridgeExpirationDate\":\"2018-11-04T23:59:59\",\"patientAgeYears\":60,\"deviceSerial\":\"cephied-PC\",\"assay\":\"Xpert MTB-RIF Assay G4\",\"reagentLotId\":\"22103\",\"user\":\"ICD-KOTRI\",\"softwareVersion\":\"4.7b\",\"moduleSerial\":\"685257\"}"));
 	}
 
 	/**
@@ -104,5 +106,29 @@ public class GeneXpertResultTest {
 				json.has("patientId") && json.has("sampleId")
 						&& json.has("resultText") && json.has("user")
 						&& json.has("probeData"));
+	}
+
+	@Test
+	public final void testParseResult() {
+		GeneXpertResult obj = new GeneXpertResult();
+
+		obj.parseResults(new JSONObject("{\"resultText\":\"MTB NOT DETECTED\"}"));
+		assertNotNull(obj.getMtbResult());
+
+		obj.parseResults(new JSONObject("{\"resultText\":\"MTB DETECTED LOW|Rif Resistance NOT DETECTED\"}"));
+		assertTrue(obj.getMtbResult().equals("DETECTED"));
+		assertTrue(obj.getMtbBurden().equals("LOW"));
+		assertTrue(obj.getRifResult().equals("NOT DETECTED"));
+
+		obj.parseResults(new JSONObject("{\"resultText\":\"MTB DETECTED HIGH|Rif Resistance DETECTED\"}"));
+		assertTrue(obj.getMtbResult().equals("DETECTED"));
+		assertTrue(obj.getMtbBurden().equals("HIGH"));
+		assertTrue(obj.getRifResult().equals("DETECTED"));
+
+		obj.parseResults(new JSONObject("{\"resultText\":\"MTB Trace DETECTED|RIF Resistance INDETERMINATE\"}"));
+		assertTrue(obj.getMtbResult().equals("DETECTED"));
+		assertTrue(obj.getMtbBurden().equals("TRACE"));
+		assertTrue(obj.getRifResult().equals("INDETERMINATE"));
+
 	}
 }

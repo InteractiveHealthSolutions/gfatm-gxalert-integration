@@ -41,6 +41,8 @@ public class GeneXpertResult implements Serializable {
 	private String mtbBurden;
 	private String rifResult;
 	private String resultText;
+	private Integer result1;
+	private Integer result2;
 	private String hostId;
 	private String deploymentName;
 	private Date testStartedOn;
@@ -73,8 +75,7 @@ public class GeneXpertResult implements Serializable {
 	 * @param testEndedOn
 	 * @param user
 	 */
-	public GeneXpertResult(String patientId, String sampleId,
-			Long cartridgeSerial, String mtbResult, String resultText,
+	public GeneXpertResult(String patientId, String sampleId, Long cartridgeSerial, String mtbResult, String resultText,
 			Date testStartedOn, Date testEndedOn, String user) {
 		super();
 		this.patientId = patientId;
@@ -117,16 +118,12 @@ public class GeneXpertResult implements Serializable {
 	 * @param softwareVersion
 	 * @param probeData
 	 */
-	public GeneXpertResult(String patientId, String patientId2,
-			Integer patientAge, Character patientGender, String sampleId,
-			Long cartridgeSerial, String mtbResult, String mtbBurden,
-			String rifResult, String resultText, String hostId,
-			String deploymentName,
-			Date testStartedOn, Date testEndedOn, Date updatedOn,
-			Integer errorCode, String errorNotes, String notes, String user,
-			Long reagentLotId, Long moduleSerial, Long instrumentSerial,
-			Date cartridgeExpirationDate, String computerName,
-			String deviceSerial, String assay, String softwareVersion,
+	public GeneXpertResult(String patientId, String patientId2, Integer patientAge, Character patientGender,
+			String sampleId, Long cartridgeSerial, String mtbResult, String mtbBurden, String rifResult,
+			String resultText, Integer result1, Integer result2, String hostId, String deploymentName,
+			Date testStartedOn, Date testEndedOn, Date updatedOn, Integer errorCode, String errorNotes, String notes,
+			String user, Long reagentLotId, Long moduleSerial, Long instrumentSerial, Date cartridgeExpirationDate,
+			String computerName, String deviceSerial, String assay, String softwareVersion,
 			Map<String, Double> probeData) {
 		super();
 		this.patientId = patientId;
@@ -139,6 +136,8 @@ public class GeneXpertResult implements Serializable {
 		this.mtbBurden = mtbBurden;
 		this.rifResult = rifResult;
 		this.resultText = resultText;
+		this.setResult1(result1);
+		this.setResult2(result2);
 		this.deploymentName = deploymentName;
 		this.hostId = hostId;
 		this.testStartedOn = testStartedOn;
@@ -307,6 +306,36 @@ public class GeneXpertResult implements Serializable {
 	 */
 	public void setResultText(String resultText) {
 		this.resultText = resultText;
+	}
+
+	/**
+	 * @return the result1
+	 */
+	public Integer getResult1() {
+		return result1;
+	}
+
+	/**
+	 * @param result1
+	 *            the result1 to set
+	 */
+	public void setResult1(Integer result1) {
+		this.result1 = result1;
+	}
+
+	/**
+	 * @return the result2
+	 */
+	public Integer getResult2() {
+		return result2;
+	}
+
+	/**
+	 * @param result2
+	 *            the result2 to set
+	 */
+	public void setResult2(Integer result2) {
+		this.result2 = result2;
 	}
 
 	/**
@@ -650,8 +679,7 @@ public class GeneXpertResult implements Serializable {
 		}
 		if (json.has("testStartedOn")) {
 			String dateStr = String.valueOf(json.get("testStartedOn"));
-			testStartedOn = DateTimeUtil.fromString(dateStr,
-					DEFAULT_DATE_FORMAT);
+			testStartedOn = DateTimeUtil.fromString(dateStr, DEFAULT_DATE_FORMAT);
 		}
 		if (json.has("testEndedOn")) {
 			String dateStr = String.valueOf(json.get("testEndedOn"));
@@ -677,10 +705,8 @@ public class GeneXpertResult implements Serializable {
 			instrumentSerial = json.getLong("instrumentSerial");
 		}
 		if (json.has("cartridgeExpirationDate")) {
-			String dateStr = String
-					.valueOf(json.get("cartridgeExpirationDate"));
-			cartridgeExpirationDate = DateTimeUtil.fromString(dateStr,
-					DEFAULT_DATE_FORMAT);
+			String dateStr = String.valueOf(json.get("cartridgeExpirationDate"));
+			cartridgeExpirationDate = DateTimeUtil.fromString(dateStr, DEFAULT_DATE_FORMAT);
 		}
 		if (json.has("computerName")) {
 			computerName = String.valueOf(json.get("computerName"));
@@ -694,43 +720,64 @@ public class GeneXpertResult implements Serializable {
 		if (json.has("softwareVersion")) {
 			softwareVersion = String.valueOf(json.get("softwareVersion"));
 		}
-		// Test carefully
 		if (json.has("resultText")) {
-			resultText = json.getString("resultText").toUpperCase();
-			if (resultText.equals("ERROR") || resultText.equals("INVALID")
-					|| resultText.equals("NO RESULT")) {
-				mtbResult = resultText;
-				if (json.has("errorCode")) {
-					if (!json.isNull("errorCode")) {
-						errorCode = json.getInt("errorCode");
-					}
+			parseResults(json);
+		}
+	}
+
+	/**
+	 * Parse the results and assigns values to respective attributes
+	 * 
+	 * @param json
+	 */
+	public void parseResults(JSONObject json) {
+		resultText = json.getString("resultText").toUpperCase();
+		if (resultText.equals("ERROR") || resultText.equals("INVALID") || resultText.equals("NO RESULT")) {
+			mtbResult = resultText;
+			if (json.has("errorCode")) {
+				if (!json.isNull("errorCode")) {
+					errorCode = json.getInt("errorCode");
 				}
-				if (json.has("errorNotes")) {
-					errorNotes = String.valueOf(json.get("errorNotes"));
-				}
-			} else {
-				mtbResult = resultText.startsWith("MTB DETECTED")
-						? "DETECTED"
-						: "NOT DETECTED";
-				if (mtbResult.equals("DETECTED")) {
-					mtbBurden = resultText.contains("MTB DETECTED HIGH")
-							? "HIGH"
-							: (resultText.contains("MTB DETECTED MEDIUM")
-									? "MEDIUM"
-									: (resultText.contains("MTB DETECTED LOW")
-											? "LOW"
-											: "VERY LOW"));
-				}
-				if (resultText.contains("RIF RESISTANCE DETECTED")) {
-					rifResult = "DETECTED";
-				} else if (resultText.contains("RIF RESISTANCE INDETERMINATE")) {
-					rifResult = "INDETERMINATE";
+			}
+			if (json.has("errorNotes")) {
+				errorNotes = String.valueOf(json.get("errorNotes"));
+			}
+		} else {
+			mtbResult = (resultText.startsWith("MTB DETECTED") || resultText.startsWith("MTB TRACE DETECTED"))
+					? "DETECTED"
+					: "NOT DETECTED";
+			if (mtbResult.equals("DETECTED")) {
+				if (resultText.contains("MTB DETECTED HIGH")) {
+					mtbBurden = "HIGH";
+				} else if (resultText.contains("MTB DETECTED MEDIUM")) {
+					mtbBurden = "MEDIUM";
+				} else if (resultText.contains("MTB DETECTED LOW")) {
+					mtbBurden = "LOW";
+				} else if (resultText.contains("MTB DETECTED VERY LOW")) {
+					mtbBurden = "VERY LOW";
 				} else {
-					rifResult = "NOT DETECTED";
+					mtbBurden = "TRACE";
 				}
-				if (json.has("probeData")) {
-					setProbeData(json.getJSONObject("probeData"));
-				}
+			}
+			if (resultText.contains("RIF RESISTANCE DETECTED")) {
+				rifResult = "DETECTED";
+			} else if (resultText.contains("RIF RESISTANCE INDETERMINATE")) {
+				rifResult = "INDETERMINATE";
+			} else {
+				rifResult = "NOT DETECTED";
+			}
+			if (json.has("probeData")) {
+				setProbeData(json.getJSONObject("probeData"));
+			}
+		}
+		if (json.has("result1")) {
+			if (!json.isNull("result1")) {
+				result1 = json.getInt("result1");
+			}
+		}
+		if (json.has("result2")) {
+			if (!json.isNull("result2")) {
+				result2 = json.getInt("result2");
 			}
 		}
 	}
@@ -754,18 +801,9 @@ public class GeneXpertResult implements Serializable {
 		json.put("resultText", resultText);
 		json.put("hostId", hostId);
 		json.put("deploymentName", deploymentName);
-		json.put(
-				"testStartedOn",
-				testStartedOn == null ? null : DateTimeUtil
-						.toSqlDateString(testStartedOn));
-		json.put(
-				"testEndedOn",
-				testEndedOn == null ? null : DateTimeUtil
-						.toSqlDateString(testEndedOn));
-		json.put(
-				"updatedOn",
-				updatedOn == null ? null : DateTimeUtil
-						.toSqlDateString(updatedOn));
+		json.put("testStartedOn", testStartedOn == null ? null : DateTimeUtil.toSqlDateString(testStartedOn));
+		json.put("testEndedOn", testEndedOn == null ? null : DateTimeUtil.toSqlDateString(testEndedOn));
+		json.put("updatedOn", updatedOn == null ? null : DateTimeUtil.toSqlDateString(updatedOn));
 		json.put("errorCode", errorCode);
 		json.put("errorNotes", errorNotes);
 		json.put("notes", notes);
@@ -773,9 +811,8 @@ public class GeneXpertResult implements Serializable {
 		json.put("reagentLotId", reagentLotId);
 		json.put("moduleSerial", moduleSerial);
 		json.put("instrumentSerial", instrumentSerial);
-		json.put("cartridgeExpirationDate", cartridgeExpirationDate == null
-				? null
-				: DateTimeUtil.toSqlDateString(cartridgeExpirationDate));
+		json.put("cartridgeExpirationDate",
+				cartridgeExpirationDate == null ? null : DateTimeUtil.toSqlDateString(cartridgeExpirationDate));
 		json.put("computerName", computerName);
 		json.put("deviceSerial", deviceSerial);
 		json.put("assay", assay);
@@ -786,16 +823,11 @@ public class GeneXpertResult implements Serializable {
 
 	@Override
 	public String toString() {
-		return patientId + ", " + patientId2 + ", " + patientAge + ", "
-				+ patientGender + ", " + sampleId + ", " + cartridgeSerial
-				+ ", " + mtbResult + ", " + mtbBurden + ", " + rifResult + ", "
-				+ resultText + ", " + hostId + ", " + deploymentName + ", "
-				+ testStartedOn + ", " + testEndedOn + ", " + updatedOn + ", "
-				+ errorCode + ", " + errorNotes + ", " + notes + ", " + user
-				+ ", " + reagentLotId + ", " + moduleSerial + ", "
-				+ instrumentSerial + ", " + cartridgeExpirationDate + ", "
-				+ computerName + ", " + deviceSerial + ", " + assay + ", "
-				+ softwareVersion + ", " + "probeData={" + probeData.toString()
-				+ "}";
+		return patientId + ", " + patientId2 + ", " + patientAge + ", " + patientGender + ", " + sampleId + ", "
+				+ cartridgeSerial + ", " + mtbResult + ", " + mtbBurden + ", " + rifResult + ", " + resultText + ", "
+				+ hostId + ", " + deploymentName + ", " + testStartedOn + ", " + testEndedOn + ", " + updatedOn + ", "
+				+ errorCode + ", " + errorNotes + ", " + notes + ", " + user + ", " + reagentLotId + ", " + moduleSerial
+				+ ", " + instrumentSerial + ", " + cartridgeExpirationDate + ", " + computerName + ", " + deviceSerial
+				+ ", " + assay + ", " + softwareVersion + ", " + "probeData={" + probeData.toString() + "}";
 	}
 }

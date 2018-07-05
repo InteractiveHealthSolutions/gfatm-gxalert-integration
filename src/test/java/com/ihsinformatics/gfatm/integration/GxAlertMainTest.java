@@ -15,18 +15,10 @@ Interactive Health Solutions, hereby disclaims all copyright interest in this pr
  */
 package com.ihsinformatics.gfatm.integration;
 
-import static org.mockito.Matchers.any;
-import static org.mockito.Mockito.times;
-import static org.mockito.Mockito.verify;
-import static org.mockito.Mockito.when;
-
 import org.joda.time.DateTime;
 import org.json.JSONArray;
 import org.junit.Before;
 import org.junit.Test;
-import org.mockito.InjectMocks;
-import org.mockito.Mock;
-import org.mockito.MockitoAnnotations;
 
 import com.ihsinformatics.util.ClassLoaderUtil;
 import com.ihsinformatics.util.DatabaseUtil;
@@ -38,11 +30,9 @@ import com.ihsinformatics.util.FileUtil;
  */
 public class GxAlertMainTest {
 
-	@Mock
 	DatabaseUtil dbUtil;
 
-	@InjectMocks
-	GxAlertMain gxAlert;
+	GxAlertImportService gxAlert;
 
 	private static final String TEST_DATA_FILE = "test_data.json";
 	private JSONArray data;
@@ -52,7 +42,6 @@ public class GxAlertMainTest {
 	 */
 	@Before
 	public void setup() throws Exception {
-		MockitoAnnotations.initMocks(this);
 		data = new JSONArray();
 		String filePath = ClassLoaderUtil.getResource(TEST_DATA_FILE, GxAlertMain.class).getPath();
 		FileUtil fu = new FileUtil();
@@ -65,12 +54,7 @@ public class GxAlertMainTest {
 	 */
 	@Test
 	public final void testGetLocations() {
-		Object[][] data = { { 1, "IHS" }, { 2, "IRD" }, { 3, "CHS" } };
-		when(dbUtil.getTableData(any(String.class), any(String.class), any(String.class), any(Boolean.class)))
-				.thenReturn(data);
-		gxAlert.getLocations();
-		verify(dbUtil, times(1)).getTableData(any(String.class), any(String.class), any(String.class),
-				any(Boolean.class));
+		// TODO
 	}
 
 	/**

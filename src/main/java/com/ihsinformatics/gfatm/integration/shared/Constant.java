@@ -18,30 +18,34 @@ package com.ihsinformatics.gfatm.integration.shared;
  */
 public final class Constant {
 
-	public static final String patientIdRegex = "^[A-Za-z0-9]{5}\\-[0-9]$";
-	public static final int gxpEncounterType = 172; // 23;
-	public static final int gxpResultConceptId = 162202;
-	public static final int invalidConceptId = 163611;
-	public static final int noResultConceptId = 164312;
-	public static final int detectedConceptId = 1301;
-	public static final int notDetectedConceptId = 1302;
-	public static final int errorConceptId = 165361;
-	public static final int rifResultConceptId = 164347;
-	public static final int rifDetectedConceptId = 1301;
-	public static final int rifNotDetectedConceptId = 1302;
-	public static final int rifIndeterminateConceptId = 1138;
-	public static final int mtbBurdenConceptId = 164345;
-	public static final int highConceptId = 1408;
-	public static final int mediumConceptId = 164342;
-	public static final int lowConceptId = 1407;
-	public static final int veryLowConceptId = 164343;
-	public static final int cartridgeConceptId = 164306;
-	public static final int errorCodeConceptId = 164348;
-	public static final int errorNotesConceptId = 166068;
-	public static final int notesConceptId = 166066;
-	public static final int sampleConceptId = 159968;
-	public static final int hostConceptId = 166069;
-	public static final int reagentLotConceptId = 166070;
-	public static final int moduleSerialConceptId = 166071;
+	private Constant() {
+		// Hide the implicit public interface
+	}
 
+	public static final String PATIENT_ID_REGEX = "^[A-Za-z0-9]{5}\\-[0-9]$";
+	public static final int GXP_ENCOUNTER_TYPE = 172;
+	public static final int GXP_RESULT_CONCEPT = 162202;
+	public static final int INVALID_CONCEPT = 163611;
+	public static final int NO_RESULT_CONCEPT = 164312;
+	public static final int MTB_DETECTED_CONCEPT = 1301;
+	public static final int MTB_NOT_DETECTED_CONCEPT = 1302;
+	public static final int ERROR_CONCEPT = 165361;
+	public static final int RIF_RESULT_CONCEPT = 164347;
+	public static final int RIF_DETECTED_CONCEPT = 1301;
+	public static final int RIF_NOT_DETECTED_CONCEPT = 1302;
+	public static final int RIF_INDETERMINATE_CONCEPT = 1138;
+	public static final int MTB_BURDEN_CONCEPT = 164345;
+	public static final int HIGH_CONCEPT = 1408;
+	public static final int MEDIUM_CONCEPT = 164342;
+	public static final int LOW_CONCEPT = 1407;
+	public static final int VERY_LOW_CONCEPT = 164343;
+	public static final int TRACE_CONCEPT = 1874;
+	public static final int CARTRIDGE_CONCEPT = 164306;
+	public static final int ERROR_CODE_CONCEPT = 164348;
+	public static final int ERROR_NOTES_CONCEPT = 166068;
+	public static final int NOTES_CONCEPT = 166066;
+	public static final int SAMPLE_CONCEPT = 159968;
+	public static final int HOST_CONCEPT = 166069;
+	public static final int REAGENT_LOT_CONCEPT = 166070;
+	public static final int MODULE_SERIAL_CONCEPT = 166071;
 }
