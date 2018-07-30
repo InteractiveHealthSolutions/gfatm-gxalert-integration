@@ -743,7 +743,7 @@ public class GeneXpertResult implements Serializable {
 				errorNotes = String.valueOf(json.get("errorNotes"));
 			}
 		} else {
-			mtbResult = (resultText.startsWith("MTB DETECTED") || resultText.startsWith("MTB TRACE DETECTED"))
+			mtbResult = (resultText.startsWith("MTB DETECTED") || resultText.contains("TRACE"))
 					? "DETECTED"
 					: "NOT DETECTED";
 			if (mtbResult.equals("DETECTED")) {
