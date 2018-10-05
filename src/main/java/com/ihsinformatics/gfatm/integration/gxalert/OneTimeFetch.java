@@ -10,7 +10,7 @@ You can also access the license on the internet at the address: http://www.gnu.o
 Interactive Health Solutions, hereby disclaims all copyright interest in this program written by the contributors.
 */
 
-package com.ihsinformatics.gfatm.integration;
+package com.ihsinformatics.gfatm.integration.gxalert;
 
 import java.io.BufferedReader;
 import java.io.IOException;
@@ -27,7 +27,7 @@ import org.apache.log4j.Logger;
 import org.json.JSONArray;
 import org.json.JSONObject;
 
-import com.ihsinformatics.gfatm.integration.model.GeneXpertResult;
+import com.ihsinformatics.gfatm.integration.gxalert.model.GeneXpertResult;
 import com.ihsinformatics.util.DatabaseUtil;
 import com.ihsinformatics.util.FileUtil;
 

@@ -9,7 +9,7 @@ You can also access the license on the internet at the address: http://www.gnu.o
 
 Interactive Health Solutions, hereby disclaims all copyright interest in this program written by the contributors.
  */
-package com.ihsinformatics.gfatm.integration;
+package com.ihsinformatics.gfatm.integration.gxalert;
 
 import java.io.IOException;
 import java.io.InputStream;

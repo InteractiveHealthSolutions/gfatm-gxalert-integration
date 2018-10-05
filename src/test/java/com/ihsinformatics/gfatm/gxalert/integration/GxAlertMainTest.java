@@ -13,13 +13,15 @@ Interactive Health Solutions, hereby disclaims all copyright interest in this pr
 /**
  * 
  */
-package com.ihsinformatics.gfatm.integration;
+package com.ihsinformatics.gfatm.gxalert.integration;
 
 import org.joda.time.DateTime;
 import org.json.JSONArray;
 import org.junit.Before;
 import org.junit.Test;
 
+import com.ihsinformatics.gfatm.integration.gxalert.GxAlertImportService;
+import com.ihsinformatics.gfatm.integration.gxalert.GxAlertMain;
 import com.ihsinformatics.util.ClassLoaderUtil;
 import com.ihsinformatics.util.DatabaseUtil;
 import com.ihsinformatics.util.FileUtil;
@@ -50,7 +52,7 @@ public class GxAlertMainTest {
 
 	/**
 	 * Test method for
-	 * {@link com.ihsinformatics.gfatm.integration.GxAlertMain#getLocations()}.
+	 * {@link com.ihsinformatics.gfatm.integration.gxalert.GxAlertMain#getLocations()}.
 	 */
 	@Test
 	public final void testGetLocations() {
@@ -59,7 +61,7 @@ public class GxAlertMainTest {
 
 	/**
 	 * Test method for
-	 * {@link com.ihsinformatics.gfatm.integration.GxAlertMain#run(org.joda.time.DateTime, org.joda.time.DateTime)}.
+	 * {@link com.ihsinformatics.gfatm.integration.gxalert.GxAlertMain#run(org.joda.time.DateTime, org.joda.time.DateTime)}.
 	 */
 	@Test
 	public final void testRun() {
@@ -74,7 +76,7 @@ public class GxAlertMainTest {
 
 	/**
 	 * Test method for
-	 * {@link com.ihsinformatics.gfatm.integration.GxAlertMain#processResult(com.ihsinformatics.gfatm.integration.model.GeneXpertResult)}.
+	 * {@link com.ihsinformatics.gfatm.integration.gxalert.GxAlertMain#processResult(com.ihsinformatics.gfatm.integration.model.GeneXpertResult)}.
 	 */
 	@Test
 	public final void testProcessResult() {
@@ -83,7 +85,7 @@ public class GxAlertMainTest {
 
 	/**
 	 * Test method for
-	 * {@link com.ihsinformatics.gfatm.integration.GxAlertMain#searchLatestResult(org.json.JSONArray)}.
+	 * {@link com.ihsinformatics.gfatm.integration.gxalert.GxAlertMain#searchLatestResult(org.json.JSONArray)}.
 	 */
 	@Test
 	public final void testSearchLatestResult() {
@@ -92,7 +94,7 @@ public class GxAlertMainTest {
 
 	/**
 	 * Test method for
-	 * {@link com.ihsinformatics.gfatm.integration.GxAlertMain#getGxAlertResults(java.lang.String)}.
+	 * {@link com.ihsinformatics.gfatm.integration.gxalert.GxAlertMain#getGxAlertResults(java.lang.String)}.
 	 */
 	@Test
 	public final void testGetGxAlertResults() {
@@ -101,7 +103,7 @@ public class GxAlertMainTest {
 
 	/**
 	 * Test method for
-	 * {@link com.ihsinformatics.gfatm.integration.GxAlertMain#saveGeneXpertResult(int, int, int, org.joda.time.DateTime, com.ihsinformatics.gfatm.integration.model.GeneXpertResult)}.
+	 * {@link com.ihsinformatics.gfatm.integration.gxalert.GxAlertMain#saveGeneXpertResult(int, int, int, org.joda.time.DateTime, com.ihsinformatics.gfatm.integration.model.GeneXpertResult)}.
 	 */
 	@Test
 	public final void testSaveGeneXpertResult() {
@@ -110,7 +112,7 @@ public class GxAlertMainTest {
 
 	/**
 	 * Test method for
-	 * {@link com.ihsinformatics.gfatm.integration.GxAlertMain#getModuleSerialNoQuery(int, int, int, java.lang.Integer, java.util.Date, java.lang.String, long)}.
+	 * {@link com.ihsinformatics.gfatm.integration.gxalert.GxAlertMain#getModuleSerialNoQuery(int, int, int, java.lang.Integer, java.util.Date, java.lang.String, long)}.
 	 */
 	@Test
 	public final void testGetModuleSerialNoQuery() {
@@ -119,7 +121,7 @@ public class GxAlertMainTest {
 
 	/**
 	 * Test method for
-	 * {@link com.ihsinformatics.gfatm.integration.GxAlertMain#getReagentLotNoQuery(int, int, int, java.lang.Integer, java.util.Date, java.lang.String, long)}.
+	 * {@link com.ihsinformatics.gfatm.integration.gxalert.GxAlertMain#getReagentLotNoQuery(int, int, int, java.lang.Integer, java.util.Date, java.lang.String, long)}.
 	 */
 	@Test
 	public final void testGetReagentLotNoQuery() {
@@ -128,7 +130,7 @@ public class GxAlertMainTest {
 
 	/**
 	 * Test method for
-	 * {@link com.ihsinformatics.gfatm.integration.GxAlertMain#getHostNameQuery(int, int, int, java.lang.Integer, java.util.Date, java.lang.String, java.lang.String)}.
+	 * {@link com.ihsinformatics.gfatm.integration.gxalert.GxAlertMain#getHostNameQuery(int, int, int, java.lang.Integer, java.util.Date, java.lang.String, java.lang.String)}.
 	 */
 	@Test
 	public final void testGetHostNameQuery() {
@@ -137,7 +139,7 @@ public class GxAlertMainTest {
 
 	/**
 	 * Test method for
-	 * {@link com.ihsinformatics.gfatm.integration.GxAlertMain#getSampleIdQuery(int, int, int, java.lang.Integer, java.util.Date, java.lang.String, java.lang.String)}.
+	 * {@link com.ihsinformatics.gfatm.integration.gxalert.GxAlertMain#getSampleIdQuery(int, int, int, java.lang.Integer, java.util.Date, java.lang.String, java.lang.String)}.
 	 */
 	@Test
 	public final void testGetSampleIdQuery() {
@@ -146,7 +148,7 @@ public class GxAlertMainTest {
 
 	/**
 	 * Test method for
-	 * {@link com.ihsinformatics.gfatm.integration.GxAlertMain#getCartridgeNoQuery(int, int, int, java.lang.Integer, java.util.Date, java.lang.String, long)}.
+	 * {@link com.ihsinformatics.gfatm.integration.gxalert.GxAlertMain#getCartridgeNoQuery(int, int, int, java.lang.Integer, java.util.Date, java.lang.String, long)}.
 	 */
 	@Test
 	public final void testGetCartridgeNoQuery() {
@@ -155,7 +157,7 @@ public class GxAlertMainTest {
 
 	/**
 	 * Test method for
-	 * {@link com.ihsinformatics.gfatm.integration.GxAlertMain#getNotesQuery(int, int, int, java.lang.Integer, java.util.Date, java.lang.String, java.lang.String)}.
+	 * {@link com.ihsinformatics.gfatm.integration.gxalert.GxAlertMain#getNotesQuery(int, int, int, java.lang.Integer, java.util.Date, java.lang.String, java.lang.String)}.
 	 */
 	@Test
 	public final void testGetNotesQuery() {
@@ -164,7 +166,7 @@ public class GxAlertMainTest {
 
 	/**
 	 * Test method for
-	 * {@link com.ihsinformatics.gfatm.integration.GxAlertMain#getRifResultQuery(int, int, int, java.lang.Integer, java.util.Date, java.lang.String, boolean, boolean)}.
+	 * {@link com.ihsinformatics.gfatm.integration.gxalert.GxAlertMain#getRifResultQuery(int, int, int, java.lang.Integer, java.util.Date, java.lang.String, boolean, boolean)}.
 	 */
 	@Test
 	public final void testGetRifResultQuery() {
@@ -173,7 +175,7 @@ public class GxAlertMainTest {
 
 	/**
 	 * Test method for
-	 * {@link com.ihsinformatics.gfatm.integration.GxAlertMain#getMtbBurdenQuery(int, int, int, java.lang.Integer, java.util.Date, java.lang.String, java.lang.String)}.
+	 * {@link com.ihsinformatics.gfatm.integration.gxalert.GxAlertMain#getMtbBurdenQuery(int, int, int, java.lang.Integer, java.util.Date, java.lang.String, java.lang.String)}.
 	 */
 	@Test
 	public final void testGetMtbBurdenQuery() {
@@ -182,7 +184,7 @@ public class GxAlertMainTest {
 
 	/**
 	 * Test method for
-	 * {@link com.ihsinformatics.gfatm.integration.GxAlertMain#getGxpResultQuery(int, int, int, java.lang.Integer, java.util.Date, java.lang.String, java.lang.String)}.
+	 * {@link com.ihsinformatics.gfatm.integration.gxalert.GxAlertMain#getGxpResultQuery(int, int, int, java.lang.Integer, java.util.Date, java.lang.String, java.lang.String)}.
 	 */
 	@Test
 	public final void testGetGxpResultQuery() {
@@ -191,7 +193,7 @@ public class GxAlertMainTest {
 
 	/**
 	 * Test method for
-	 * {@link com.ihsinformatics.gfatm.integration.GxAlertMain#getErrorNotesQuery(int, int, com.ihsinformatics.gfatm.integration.model.GeneXpertResult, java.lang.Integer, java.util.Date, java.lang.String)}.
+	 * {@link com.ihsinformatics.gfatm.integration.gxalert.GxAlertMain#getErrorNotesQuery(int, int, com.ihsinformatics.gfatm.integration.model.GeneXpertResult, java.lang.Integer, java.util.Date, java.lang.String)}.
 	 */
 	@Test
 	public final void testGetErrorNotesQuery() {
@@ -200,7 +202,7 @@ public class GxAlertMainTest {
 
 	/**
 	 * Test method for
-	 * {@link com.ihsinformatics.gfatm.integration.GxAlertMain#getErrorCodeQuery(int, int, int, com.ihsinformatics.gfatm.integration.model.GeneXpertResult, java.lang.Integer, java.util.Date, java.lang.String)}.
+	 * {@link com.ihsinformatics.gfatm.integration.gxalert.GxAlertMain#getErrorCodeQuery(int, int, int, com.ihsinformatics.gfatm.integration.model.GeneXpertResult, java.lang.Integer, java.util.Date, java.lang.String)}.
 	 */
 	@Test
 	public final void testGetErrorCodeQuery() {
@@ -209,7 +211,7 @@ public class GxAlertMainTest {
 
 	/**
 	 * Test method for
-	 * {@link com.ihsinformatics.gfatm.integration.GxAlertMain#saveGeneXpertEncounter(int, int, int, org.joda.time.DateTime)}.
+	 * {@link com.ihsinformatics.gfatm.integration.gxalert.GxAlertMain#saveGeneXpertEncounter(int, int, int, org.joda.time.DateTime)}.
 	 */
 	@Test
 	public final void testSaveGeneXpertEncounter() {
