@@ -13,7 +13,6 @@ package com.ihsinformatics.gfatm.integration.gxalert;
 
 import java.io.IOException;
 import java.io.InputStream;
-import java.io.Serializable;
 import java.util.Date;
 import java.util.Properties;
 
@@ -27,9 +26,8 @@ import com.ihsinformatics.util.DateTimeUtil;
  * @author owais.hussain@ihsinformatics.com
  *
  */
-public class GxAlertMain implements Serializable {
+public class GxAlertMain {
 
-	private static final long serialVersionUID = -4482413651235453707L;
 	private static final Logger log = Logger.getLogger(GxAlertMain.class);
 	private static final String PROP_FILE_NAME = "gfatm-gxalert-integration.properties";
 
