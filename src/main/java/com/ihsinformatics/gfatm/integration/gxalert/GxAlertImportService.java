@@ -153,8 +153,8 @@ public class GxAlertImportService {
 
 	/**
 	 * Fetches last update date from Encounter table against
-	 * {@code Constant.GXP_ENCOUNTER_TYPE} and for every date, new results are fetched
-	 * and stored
+	 * {@code Constant.GXP_ENCOUNTER_TYPE} and for every date, new results are
+	 * fetched and stored
 	 * 
 	 * @throws MalformedURLException
 	 * @throws JSONException
@@ -255,6 +255,12 @@ public class GxAlertImportService {
 			throws InstantiationException, IllegalAccessException, ClassNotFoundException, SQLException {
 		// Skip if the result is incomplete
 		if (geneXpertResult.getTestEndedOn() == null) {
+			log.info("Test " + geneXpertResult.getCartridgeSerial() + " is not yet complete.");
+			return;
+		}
+		// Ehtiyatan, wait for 1 hour after the test is complete
+		long diffInHours = (new Date().getTime() - geneXpertResult.getTestEndedOn().getTime()) / 3600000;
+		if (diffInHours < 1) {
 			log.info("Test " + geneXpertResult.getCartridgeSerial() + " is not yet complete.");
 			return;
 		}
