@@ -147,6 +147,7 @@ public class GxAlertImportService {
 		if (dateStr != null) {
 			start = new DateTime(DateTimeUtil.fromSqlDateString(dateStr));
 		}
+		// Ehtiyatan, wait for 1 hour after the test is complete
 		DateTime end = new DateTime().minusHours(1);
 		run(start, end);
 	}
@@ -170,7 +171,6 @@ public class GxAlertImportService {
 				"select ifnull(max(encounter_datetime), (select min(encounter_datetime) from encounter)) as max_date from encounter where encounter_type = "
 						+ Constant.GXP_ENCOUNTER_TYPE);
 		DateTime start = new DateTime(DateTimeUtil.fromSqlDateString(dateStr));
-		// Ehtiyatan, wait for 1 hour after the test is complete
 		DateTime end = start.plusDays(1);
 		while (end.isBeforeNow()) {
 			run(start, end);
