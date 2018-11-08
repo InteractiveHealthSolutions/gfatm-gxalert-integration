@@ -147,7 +147,7 @@ public class GxAlertImportService {
 		if (dateStr != null) {
 			start = new DateTime(DateTimeUtil.fromSqlDateString(dateStr));
 		}
-		DateTime end = start.plusHours(fetchDurationHours);
+		DateTime end = new DateTime().minusHours(1);
 		run(start, end);
 	}
 
@@ -170,6 +170,7 @@ public class GxAlertImportService {
 				"select ifnull(max(encounter_datetime), (select min(encounter_datetime) from encounter)) as max_date from encounter where encounter_type = "
 						+ Constant.GXP_ENCOUNTER_TYPE);
 		DateTime start = new DateTime(DateTimeUtil.fromSqlDateString(dateStr));
+		// Ehtiyatan, wait for 1 hour after the test is complete
 		DateTime end = start.plusDays(1);
 		while (end.isBeforeNow()) {
 			run(start, end);
@@ -255,12 +256,6 @@ public class GxAlertImportService {
 			throws InstantiationException, IllegalAccessException, ClassNotFoundException, SQLException {
 		// Skip if the result is incomplete
 		if (geneXpertResult.getTestEndedOn() == null) {
-			log.info("Test " + geneXpertResult.getCartridgeSerial() + " is not yet complete.");
-			return;
-		}
-		// Ehtiyatan, wait for 1 hour after the test is complete
-		long diffInHours = (new Date().getTime() - geneXpertResult.getTestEndedOn().getTime()) / 3600000;
-		if (diffInHours < 1) {
 			log.info("Test " + geneXpertResult.getCartridgeSerial() + " is not yet complete.");
 			return;
 		}
@@ -434,7 +429,7 @@ public class GxAlertImportService {
 		queries.add(query.toString());
 
 		// Query for MTB Burden observation
-		if (gxp.getMtbResult().equals("DETECTED")) {
+		if (gxp.getMtbResult().equals(Constant.DETECTED)) {
 			query = getMtbBurdenQuery(patientId, encounterLocationId, gxAlertUserId, encounterId, obsDate,
 					insertQueryPrefix, gxp.getMtbBurden());
 			queries.add(query.toString());
@@ -442,8 +437,8 @@ public class GxAlertImportService {
 
 		// Query for RIF result observation
 		if (gxp.getRifResult() != null) {
-			boolean rifDetected = gxp.getRifResult().equals("DETECTED");
-			boolean rifIndeterminate = gxp.getMtbResult().equals("INDETERMINATE");
+			boolean rifDetected = gxp.getRifResult().equals(Constant.DETECTED);
+			boolean rifIndeterminate = gxp.getMtbResult().equals(Constant.INDETERMINATE);
 			query = getRifResultQuery(patientId, encounterLocationId, gxAlertUserId, encounterId, obsDate,
 					insertQueryPrefix, rifDetected, rifIndeterminate);
 			queries.add(query.toString());
@@ -625,15 +620,15 @@ public class GxAlertImportService {
 		query = new StringBuilder(insertQueryPrefix);
 		query.append("(0," + patientId + "," + Constant.MTB_BURDEN_CONCEPT + "," + encounterId + ",");
 		query.append("'" + DateTimeUtil.toSqlDateTimeString(obsDate) + "'," + encounterLocationId + ",NULL,");
-		if (mtbBurden.equals("HIGH")) {
+		if (mtbBurden.equals(Constant.HIGH)) {
 			query.append(Constant.HIGH_CONCEPT + ",");
-		} else if (mtbBurden.equals("MEDIUM")) {
+		} else if (mtbBurden.equals(Constant.MEDIUM)) {
 			query.append(Constant.MEDIUM_CONCEPT + ",");
-		} else if (mtbBurden.equals("LOW")) {
+		} else if (mtbBurden.equals(Constant.LOW)) {
 			query.append(Constant.LOW_CONCEPT + ",");
-		} else if (mtbBurden.equals("VERY LOW")) {
+		} else if (mtbBurden.equals(Constant.VERY_LOW)) {
 			query.append(Constant.VERY_LOW_CONCEPT + ",");
-		} else if (mtbBurden.equals("TRACE")) {
+		} else if (mtbBurden.equals(Constant.TRACE)) {
 			query.append(Constant.TRACE_CONCEPT + ",");
 		}
 		query.append("NULL,NULL,NULL,'Auto-saved by GXAlert.',");
@@ -645,10 +640,10 @@ public class GxAlertImportService {
 
 	public StringBuilder getGxpResultQuery(int patientId, int encounterLocationId, int gxAlertUserId,
 			Integer encounterId, Date obsDate, String insertQueryPrefix, String mtbResult) {
-		boolean mtbDetected = mtbResult.equals("DETECTED");
-		boolean error = mtbResult.equals("ERROR");
-		boolean noResult = mtbResult.equals("NO RESULT");
-		boolean invalid = mtbResult.equals("INVALID");
+		boolean mtbDetected = mtbResult.equals(Constant.DETECTED);
+		boolean error = mtbResult.equals(Constant.ERROR);
+		boolean noResult = mtbResult.equals(Constant.NO_RESULT);
+		boolean invalid = mtbResult.equals(Constant.INVALID);
 		StringBuilder query;
 		query = new StringBuilder(insertQueryPrefix);
 		query.append("(0," + patientId + "," + Constant.GXP_RESULT_CONCEPT + "," + encounterId + ",");

@@ -21,6 +21,7 @@ import java.util.Set;
 
 import org.json.JSONObject;
 
+import com.ihsinformatics.gfatm.integration.gxalert.shared.Constant;
 import com.ihsinformatics.util.DateTimeUtil;
 
 /**
@@ -136,8 +137,8 @@ public class GeneXpertResult implements Serializable {
 		this.mtbBurden = mtbBurden;
 		this.rifResult = rifResult;
 		this.resultText = resultText;
-		this.setResult1(result1);
-		this.setResult2(result2);
+		this.result1 = result1;
+		this.result2 = result2;
 		this.deploymentName = deploymentName;
 		this.hostId = hostId;
 		this.testStartedOn = testStartedOn;
@@ -166,8 +167,7 @@ public class GeneXpertResult implements Serializable {
 	}
 
 	/**
-	 * @param patientId
-	 *            the patientId to set
+	 * @param patientId the patientId to set
 	 */
 	public void setPatientId(String patientId) {
 		this.patientId = patientId;
@@ -181,8 +181,7 @@ public class GeneXpertResult implements Serializable {
 	}
 
 	/**
-	 * @param patientId2
-	 *            the patientId2 to set
+	 * @param patientId2 the patientId2 to set
 	 */
 	public void setPatientId2(String patientId2) {
 		this.patientId2 = patientId2;
@@ -196,8 +195,7 @@ public class GeneXpertResult implements Serializable {
 	}
 
 	/**
-	 * @param patientAge
-	 *            the patientAge to set
+	 * @param patientAge the patientAge to set
 	 */
 	public void setPatientAge(Integer patientAge) {
 		this.patientAge = patientAge;
@@ -211,8 +209,7 @@ public class GeneXpertResult implements Serializable {
 	}
 
 	/**
-	 * @param patientGender
-	 *            the patientGender to set
+	 * @param patientGender the patientGender to set
 	 */
 	public void setPatientGender(Character patientGender) {
 		this.patientGender = patientGender;
@@ -226,8 +223,7 @@ public class GeneXpertResult implements Serializable {
 	}
 
 	/**
-	 * @param sampleId
-	 *            the sampleId to set
+	 * @param sampleId the sampleId to set
 	 */
 	public void setSampleId(String sampleId) {
 		this.sampleId = sampleId;
@@ -241,8 +237,7 @@ public class GeneXpertResult implements Serializable {
 	}
 
 	/**
-	 * @param cartridgeSerial
-	 *            the cartridgeSerial to set
+	 * @param cartridgeSerial the cartridgeSerial to set
 	 */
 	public void setCartridgeSerial(Long cartridgeSerial) {
 		this.cartridgeSerial = cartridgeSerial;
@@ -256,8 +251,7 @@ public class GeneXpertResult implements Serializable {
 	}
 
 	/**
-	 * @param mtbResult
-	 *            the mtbResult to set
+	 * @param mtbResult the mtbResult to set
 	 */
 	public void setMtbResult(String mtbResult) {
 		this.mtbResult = mtbResult;
@@ -271,8 +265,7 @@ public class GeneXpertResult implements Serializable {
 	}
 
 	/**
-	 * @param mtbBurden
-	 *            the mtbBurden to set
+	 * @param mtbBurden the mtbBurden to set
 	 */
 	public void setMtbBurden(String mtbBurden) {
 		this.mtbBurden = mtbBurden;
@@ -286,8 +279,7 @@ public class GeneXpertResult implements Serializable {
 	}
 
 	/**
-	 * @param rifResult
-	 *            the rifResult to set
+	 * @param rifResult the rifResult to set
 	 */
 	public void setRifResult(String rifResult) {
 		this.rifResult = rifResult;
@@ -301,8 +293,7 @@ public class GeneXpertResult implements Serializable {
 	}
 
 	/**
-	 * @param resultText
-	 *            the resultText to set
+	 * @param resultText the resultText to set
 	 */
 	public void setResultText(String resultText) {
 		this.resultText = resultText;
@@ -316,8 +307,7 @@ public class GeneXpertResult implements Serializable {
 	}
 
 	/**
-	 * @param result1
-	 *            the result1 to set
+	 * @param result1 the result1 to set
 	 */
 	public void setResult1(Integer result1) {
 		this.result1 = result1;
@@ -331,8 +321,7 @@ public class GeneXpertResult implements Serializable {
 	}
 
 	/**
-	 * @param result2
-	 *            the result2 to set
+	 * @param result2 the result2 to set
 	 */
 	public void setResult2(Integer result2) {
 		this.result2 = result2;
@@ -346,8 +335,7 @@ public class GeneXpertResult implements Serializable {
 	}
 
 	/**
-	 * @param hostId
-	 *            the hostId to set
+	 * @param hostId the hostId to set
 	 */
 	public void setHostId(String hostId) {
 		this.hostId = hostId;
@@ -361,8 +349,7 @@ public class GeneXpertResult implements Serializable {
 	}
 
 	/**
-	 * @param deploymentName
-	 *            the deploymentName to set
+	 * @param deploymentName the deploymentName to set
 	 */
 	public void setDeploymentName(String deploymentName) {
 		this.deploymentName = deploymentName;
@@ -376,8 +363,7 @@ public class GeneXpertResult implements Serializable {
 	}
 
 	/**
-	 * @param testStartedOn
-	 *            the testStartedOn to set
+	 * @param testStartedOn the testStartedOn to set
 	 */
 	public void setTestStartedOn(Date dateStarted) {
 		this.testStartedOn = dateStarted;
@@ -391,8 +377,7 @@ public class GeneXpertResult implements Serializable {
 	}
 
 	/**
-	 * @param testEndedOn
-	 *            the testEndedOn to set
+	 * @param testEndedOn the testEndedOn to set
 	 */
 	public void setTestEndedOn(Date dateEnded) {
 		this.testEndedOn = dateEnded;
@@ -406,8 +391,7 @@ public class GeneXpertResult implements Serializable {
 	}
 
 	/**
-	 * @param updatedOn
-	 *            the updatedOn to set
+	 * @param updatedOn the updatedOn to set
 	 */
 	public void setUpdatedOn(Date dateUpdated) {
 		this.updatedOn = dateUpdated;
@@ -421,8 +405,7 @@ public class GeneXpertResult implements Serializable {
 	}
 
 	/**
-	 * @param errorCode
-	 *            the errorCode to set
+	 * @param errorCode the errorCode to set
 	 */
 	public void setErrorCode(Integer errorCode) {
 		this.errorCode = errorCode;
@@ -436,8 +419,7 @@ public class GeneXpertResult implements Serializable {
 	}
 
 	/**
-	 * @param errorNotes
-	 *            the errorNotes to set
+	 * @param errorNotes the errorNotes to set
 	 */
 	public void setErrorNotes(String errorNotes) {
 		this.errorNotes = errorNotes;
@@ -451,8 +433,7 @@ public class GeneXpertResult implements Serializable {
 	}
 
 	/**
-	 * @param notes
-	 *            the notes to set
+	 * @param notes the notes to set
 	 */
 	public void setNotes(String notes) {
 		this.notes = notes;
@@ -466,8 +447,7 @@ public class GeneXpertResult implements Serializable {
 	}
 
 	/**
-	 * @param user
-	 *            the user to set
+	 * @param user the user to set
 	 */
 	public void setUser(String user) {
 		this.user = user;
@@ -481,8 +461,7 @@ public class GeneXpertResult implements Serializable {
 	}
 
 	/**
-	 * @param reagentLotId
-	 *            the reagentLotId to set
+	 * @param reagentLotId the reagentLotId to set
 	 */
 	public void setReagentLotId(Long reagentLotId) {
 		this.reagentLotId = reagentLotId;
@@ -496,8 +475,7 @@ public class GeneXpertResult implements Serializable {
 	}
 
 	/**
-	 * @param moduleSerial
-	 *            the moduleSerial to set
+	 * @param moduleSerial the moduleSerial to set
 	 */
 	public void setModuleSerial(Long moduleSerial) {
 		this.moduleSerial = moduleSerial;
@@ -511,8 +489,7 @@ public class GeneXpertResult implements Serializable {
 	}
 
 	/**
-	 * @param instrumentSerial
-	 *            the instrumentSerial to set
+	 * @param instrumentSerial the instrumentSerial to set
 	 */
 	public void setInstrumentSerial(Long instrumentSerial) {
 		this.instrumentSerial = instrumentSerial;
@@ -526,8 +503,7 @@ public class GeneXpertResult implements Serializable {
 	}
 
 	/**
-	 * @param cartridgeExpirationDate
-	 *            the cartridgeExpirationDate to set
+	 * @param cartridgeExpirationDate the cartridgeExpirationDate to set
 	 */
 	public void setCartridgeExpiryDate(Date cartridgeExpiry) {
 		this.cartridgeExpirationDate = cartridgeExpiry;
@@ -541,8 +517,7 @@ public class GeneXpertResult implements Serializable {
 	}
 
 	/**
-	 * @param computerName
-	 *            the computerName to set
+	 * @param computerName the computerName to set
 	 */
 	public void setComputerName(String computerName) {
 		this.computerName = computerName;
@@ -556,8 +531,7 @@ public class GeneXpertResult implements Serializable {
 	}
 
 	/**
-	 * @param deviceSerial
-	 *            the deviceSerial to set
+	 * @param deviceSerial the deviceSerial to set
 	 */
 	public void setDeviceSerial(String deviceSerial) {
 		this.deviceSerial = deviceSerial;
@@ -571,8 +545,7 @@ public class GeneXpertResult implements Serializable {
 	}
 
 	/**
-	 * @param assay
-	 *            the assay to set
+	 * @param assay the assay to set
 	 */
 	public void setAssay(String assay) {
 		this.assay = assay;
@@ -586,8 +559,7 @@ public class GeneXpertResult implements Serializable {
 	}
 
 	/**
-	 * @param softwareVersion
-	 *            the softwareVersion to set
+	 * @param softwareVersion the softwareVersion to set
 	 */
 	public void setSoftwareVersion(String softwareVersion) {
 		this.softwareVersion = softwareVersion;
@@ -616,16 +588,14 @@ public class GeneXpertResult implements Serializable {
 	}
 
 	/**
-	 * @param probeData
-	 *            the probeData to set
+	 * @param probeData the probeData to set
 	 */
 	public void setProbeData(Map<String, Double> probeData) {
 		this.probeData = probeData;
 	}
 
 	/**
-	 * @param probeDataJson
-	 *            the probeDataJson to set
+	 * @param probeDataJson the probeDataJson to set
 	 */
 	public void setProbeData(JSONObject probeDataJson) {
 		probeData = new HashMap<String, Double>();
@@ -732,7 +702,8 @@ public class GeneXpertResult implements Serializable {
 	 */
 	public void parseResults(JSONObject json) {
 		resultText = json.getString("resultText").toUpperCase();
-		if (resultText.equals("ERROR") || resultText.equals("INVALID") || resultText.equals("NO RESULT")) {
+		if (resultText.equals(Constant.ERROR) || resultText.equals(Constant.INVALID)
+				|| resultText.equals(Constant.NO_RESULT)) {
 			mtbResult = resultText;
 			if (json.has("errorCode")) {
 				if (!json.isNull("errorCode")) {
@@ -743,28 +714,28 @@ public class GeneXpertResult implements Serializable {
 				errorNotes = String.valueOf(json.get("errorNotes"));
 			}
 		} else {
-			mtbResult = (resultText.startsWith("MTB DETECTED") || resultText.contains("TRACE"))
-					? "DETECTED"
-					: "NOT DETECTED";
-			if (mtbResult.equals("DETECTED")) {
-				if (resultText.contains("MTB DETECTED HIGH")) {
-					mtbBurden = "HIGH";
-				} else if (resultText.contains("MTB DETECTED MEDIUM")) {
-					mtbBurden = "MEDIUM";
-				} else if (resultText.contains("MTB DETECTED LOW")) {
-					mtbBurden = "LOW";
-				} else if (resultText.contains("MTB DETECTED VERY LOW")) {
-					mtbBurden = "VERY LOW";
+			mtbResult = (resultText.startsWith(Constant.MTB_DETECTED) || resultText.contains(Constant.TRACE))
+					? Constant.DETECTED
+					: Constant.NOT_DETECTED;
+			if (mtbResult.equals(Constant.DETECTED)) {
+				if (resultText.contains(Constant.MTB_DETECTED_HIGH)) {
+					mtbBurden = Constant.HIGH;
+				} else if (resultText.contains(Constant.MTB_DETECTED_MEDIUM)) {
+					mtbBurden = Constant.MEDIUM;
+				} else if (resultText.contains(Constant.MTB_DETECTED_LOW)) {
+					mtbBurden = Constant.LOW;
+				} else if (resultText.contains(Constant.MTB_DETECTED_VERY_LOW)) {
+					mtbBurden = Constant.VERY_LOW;
 				} else {
-					mtbBurden = "TRACE";
+					mtbBurden = Constant.TRACE;
 				}
 			}
-			if (resultText.contains("RIF RESISTANCE DETECTED")) {
-				rifResult = "DETECTED";
-			} else if (resultText.contains("RIF RESISTANCE INDETERMINATE")) {
-				rifResult = "INDETERMINATE";
+			if (resultText.contains(Constant.RIF_DETECTED)) {
+				rifResult = Constant.DETECTED;
+			} else if (resultText.contains(Constant.RIF_INDETERMINATE)) {
+				rifResult = Constant.INDETERMINATE;
 			} else {
-				rifResult = "NOT DETECTED";
+				rifResult = Constant.NOT_DETECTED;
 			}
 			if (json.has("probeData")) {
 				setProbeData(json.getJSONObject("probeData"));

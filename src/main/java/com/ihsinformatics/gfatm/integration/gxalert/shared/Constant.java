@@ -48,4 +48,23 @@ public final class Constant {
 	public static final int HOST_CONCEPT = 166069;
 	public static final int REAGENT_LOT_CONCEPT = 166070;
 	public static final int MODULE_SERIAL_CONCEPT = 166071;
+
+	public static final String ERROR = "ERROR";
+	public static final String NO_RESULT = "NO RESULT";
+	public static final String INVALID = "INVALID";
+	public static final String DETECTED = "DETECTED";
+	public static final String NOT_DETECTED = "NOT " + DETECTED;
+	public static final String INDETERMINATE = "INDETERMINATE";
+	public static final String HIGH = "HIGH";
+	public static final String MEDIUM = "MEDIUM";
+	public static final String LOW = "LOW";
+	public static final String VERY_LOW = "VERY LOW";
+	public static final String TRACE = "TRACE";
+	public static final String MTB_DETECTED = "MTB " + DETECTED;
+	public static final String MTB_DETECTED_HIGH = "MTB " + DETECTED + " " + HIGH;
+	public static final String MTB_DETECTED_MEDIUM = "MTB " + DETECTED + " " + MEDIUM;
+	public static final String MTB_DETECTED_LOW = "MTB " + DETECTED + " " + LOW;
+	public static final String MTB_DETECTED_VERY_LOW = "MTB " + DETECTED + " " + VERY_LOW;
+	public static final String RIF_DETECTED = "RIF RESISTANCE " + DETECTED;
+	public static final String RIF_INDETERMINATE = "RIF RESISTANCE " + INDETERMINATE;
 }

@@ -93,5 +93,4 @@ public class GxAlertMain {
 		properties.load(inputStream);
 		return properties;
 	}
-
 }

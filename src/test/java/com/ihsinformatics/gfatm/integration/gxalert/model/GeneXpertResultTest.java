@@ -24,6 +24,8 @@ import org.json.JSONArray;
 import org.json.JSONObject;
 import org.junit.Test;
 
+import com.ihsinformatics.gfatm.integration.gxalert.shared.Constant;
+
 /**
  * @author owais.hussain@ihsinformatics.com
  *
@@ -34,9 +36,8 @@ public class GeneXpertResultTest {
 	public static GeneXpertResult gxpExample;
 
 	static {
-		gxpExample = new GeneXpertResult("9988", "17-12-12-52356", 85223641L,
-				"DETECTED", "MTB DETECTED MEDIUM|RIF NOT DETECTED", new Date(),
-				new Date(), "owais.hussain");
+		gxpExample = new GeneXpertResult("9988", "17-12-12-52356", 85223641L, "DETECTED",
+				"MTB DETECTED MEDIUM|RIF NOT DETECTED", new Date(), new Date(), "owais.hussain");
 		Map<String, Double> probeData = new HashMap<String, Double>();
 		probeData.put("a", 0.0);
 		probeData.put("b", null);
@@ -81,10 +82,8 @@ public class GeneXpertResultTest {
 				JSONObject json = examples.getJSONObject(i);
 				obj.fromJson(json);
 				assertNotNull("Should convert from JSON", obj);
-				if (obj.getMtbResult().equals("ERROR")) {
-					assertNotNull(
-							"Error code should be shown in case of error.",
-							obj.getErrorCode());
+				if (obj.getMtbResult().equals(Constant.ERROR)) {
+					assertNotNull("Error code should be shown in case of error.", obj.getErrorCode());
 				}
 			} catch (Exception e) {
 				e.printStackTrace();
@@ -95,17 +94,13 @@ public class GeneXpertResultTest {
 
 	/**
 	 * Test method for
-	 * {@link com.ihsinformatics.gfatmweb.shared.model.GeneXpertResult#toJson()}
-	 * .
+	 * {@link com.ihsinformatics.gfatmweb.shared.model.GeneXpertResult#toJson()} .
 	 */
 	@Test
 	public final void testToJson() {
 		JSONObject json = gxpExample.toJson();
-		assertTrue(
-				"Should contain all keys.",
-				json.has("patientId") && json.has("sampleId")
-						&& json.has("resultText") && json.has("user")
-						&& json.has("probeData"));
+		assertTrue("Should contain all keys.", json.has("patientId") && json.has("sampleId") && json.has("resultText")
+				&& json.has("user") && json.has("probeData"));
 	}
 
 	@Test
@@ -116,19 +111,18 @@ public class GeneXpertResultTest {
 		assertNotNull(obj.getMtbResult());
 
 		obj.parseResults(new JSONObject("{\"resultText\":\"MTB DETECTED LOW|Rif Resistance NOT DETECTED\"}"));
-		assertTrue(obj.getMtbResult().equals("DETECTED"));
-		assertTrue(obj.getMtbBurden().equals("LOW"));
-		assertTrue(obj.getRifResult().equals("NOT DETECTED"));
+		assertTrue(obj.getMtbResult().equals(Constant.DETECTED));
+		assertTrue(obj.getMtbBurden().equals(Constant.LOW));
+		assertTrue(obj.getRifResult().equals(Constant.NOT_DETECTED));
 
 		obj.parseResults(new JSONObject("{\"resultText\":\"MTB DETECTED HIGH|Rif Resistance DETECTED\"}"));
-		assertTrue(obj.getMtbResult().equals("DETECTED"));
-		assertTrue(obj.getMtbBurden().equals("HIGH"));
-		assertTrue(obj.getRifResult().equals("DETECTED"));
+		assertTrue(obj.getMtbResult().equals(Constant.DETECTED));
+		assertTrue(obj.getMtbBurden().equals(Constant.HIGH));
+		assertTrue(obj.getRifResult().equals(Constant.DETECTED));
 
 		obj.parseResults(new JSONObject("{\"resultText\":\"MTB Trace DETECTED|RIF Resistance INDETERMINATE\"}"));
-		assertTrue(obj.getMtbResult().equals("DETECTED"));
-		assertTrue(obj.getMtbBurden().equals("TRACE"));
-		assertTrue(obj.getRifResult().equals("INDETERMINATE"));
-
+		assertTrue(obj.getMtbResult().equals(Constant.DETECTED));
+		assertTrue(obj.getMtbBurden().equals(Constant.TRACE));
+		assertTrue(obj.getRifResult().equals(Constant.INDETERMINATE));
 	}
 }
